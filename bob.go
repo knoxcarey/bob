@@ -9,7 +9,7 @@ package main
    * Documentation
    * Dockerfile
    * Integrate OpenID connect 
-     * https://github.com/ericchiang/oidc   or   https://github.com/coreos/go-oidc
+     * https://github.com/coreos/go-oidc
      * Read IDP configurations from config files, fetch keys, etc. 
      * Display interfaces for logging in with various IDPs
      * Send auth headers to beacons along with queries
@@ -22,9 +22,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	// oidc "github.com/coreos/go-oidc"
+	// "golang.org/x/net/context"
+        // "golang.org/x/oauth2"
 )
 
 
@@ -38,7 +43,6 @@ type Beacon struct {
 	AssemblyMap       map[string]string         // Names of the references for this beacon
 	AdditionalFields  map[string]string         // Additional query fields to include
 }
-
 
 // BeaconQuery is a type synonym for query
 type BeaconQuery map[string]string
@@ -57,10 +61,23 @@ type BeaconResponse struct {
 	Error      map[string]string  `json:"error,omitempty"`              
 }
 
+// Identity provider
+type IDProvider struct {
+	Name            string                      // Name of the identity provider
+	Endpoint        string                      // Endpoint for ID services
+	ClientID        string                      // Client ID embedded directly
+	ClientIDEnv     string                      // Environment variable with Client ID
+	ClientSecret    string                      // Client secret embedded directly
+	ClientSecretEnv string                      // Environment variable with client secret
+	RedirectURL     string                      // URL the provider should redirect to
+}
+
+
 
 // BeaconConfig holds the contents of JSON configuration file
 type BeaconConfig struct {
-	Beacons  []Beacon                           // List of beacons
+	Beacons     []Beacon     `json:"beacons,omitempty`     // List of beacons
+	IDProviders []IDProvider `json:"idProviders,omitempty` // Identity providers
 }
 
 
@@ -127,10 +144,10 @@ var (
 // readConfig reads in configuration file with the given file name
 func readConfig() {
 	if dat, err := ioutil.ReadFile(configFile); err != nil {
-		log.Fatal("unable to read configuration file", configFile)
+		log.Fatal("unable to read configuration file ", configFile)
 	} else {
 		if err = json.Unmarshal(dat, &Config); err != nil {
-			log.Fatal("malformed config file", configFile)
+			log.Fatal("malformed config file ", configFile)
 		}
 	}
 }
@@ -185,6 +202,23 @@ func initializeBeacons() {
 }
 
 
+// Initialize identity provider structures
+func initializeIDProviders() {
+	for i, _ := range Config.IDProviders {
+		idp := &(Config.IDProviders[i])
+		if idp.ClientIDEnv != "" {
+			idp.ClientID = os.Getenv(idp.ClientIDEnv)
+		}
+		if idp.ClientSecretEnv != "" {
+			idp.ClientSecret = os.Getenv(idp.ClientSecretEnv)
+		}
+		fmt.Println(idp.ClientID)
+		fmt.Println(idp.ClientSecret)
+	}
+}
+
+
+
 
 // Parse command-line switches; set defaults if not present
 func parseSwitches() {
@@ -201,6 +235,7 @@ func init() {
 	parseSwitches()
 	readConfig()
 	initializeBeacons()
+	initializeIDProviders()
 }
 
 

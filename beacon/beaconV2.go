@@ -3,10 +3,19 @@ package beacon
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
+// Type alias for this version
 type beaconV2 BeaconBase
+
+// Register this version's type
+func init() {
+	var nilStruct *beaconV2
+	beaconType["0.2"] = reflect.TypeOf(nilStruct).Elem()
+}
+
 
 func (beacon *beaconV2) initialize() {
 	beacon.QueryMap = make(map[string]string)
@@ -50,7 +59,7 @@ func (beacon *beaconV2) parseResponse(status int, raw []byte, err error) *Beacon
 }
 
 
-func (beacon *beaconV2) queryBeacon(query *BeaconQuery, ch chan<- BeaconResponse) {
+func (beacon *beaconV2) query(query *BeaconQuery, ch chan<- BeaconResponse) {
 	qs := beacon.queryString(query)
 	uri := fmt.Sprintf("%s?%s", beacon.Endpoint, qs)
 

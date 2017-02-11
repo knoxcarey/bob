@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"reflect"
 	"strconv"
 	"time"
 )
@@ -20,7 +21,6 @@ type BeaconBase struct {
 	QueryMap          map[string]string         // Mapping standard names to query fields
 }
 
-
 // BeaconQuery is a type synonym for query
 type BeaconQuery map[string][]string
 
@@ -35,17 +35,17 @@ type BeaconResponse struct {
 // Generic interface for beacons
 type Beacon interface {
 	initialize()
-	queryBeacon(query *BeaconQuery, ch chan<- BeaconResponse)
-	parseResponse(status int, raw []byte, err error) *BeaconResponse
+	query(query *BeaconQuery, ch chan<- BeaconResponse)
 }
 
-var (
-	// List of beacons
-	beacons []Beacon
-)
+// List of beacons to be queried
+var beacons []Beacon
+
+// Map containing types of beacons, keyed by version number string
+var beaconType = map[string]reflect.Type{}
 
 
-
+// Read a configuration file, and create version-appropriate beacon structure
 func AddBeaconFromConfig(file string) {
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -57,20 +57,14 @@ func AddBeaconFromConfig(file string) {
 		log.Fatal("malformed config file ", file)
 	}
 
-	var beacon Beacon
+	beacon := reflect.New(beaconType[js["version"].(string)]).Interface().(Beacon)
 	
-	switch js["version"] {
-	case "0.2":
-		beacon = new(beaconV2)
-	case "0.3":
-		beacon = new(beaconV3)
-	}
-
 	beacon.initialize()
 
 	if err = json.Unmarshal(buffer, &beacon); err != nil {
 		log.Fatal("malformed config file ", file)
 	}
+
 	beacons = append(beacons, beacon)
 }
 
@@ -130,7 +124,7 @@ func QueryBeaconsSync(query BeaconQuery, timeout int) []byte {
 
 	// Query each beacon
 	for _, b := range beacons {
-		go b.queryBeacon(&query, ch)
+		go b.query(&query, ch)
 	}
 
 	// Collect responses, or timeout

@@ -9,11 +9,9 @@ features. This is a work-in-progress, so caveat emptor.
 
 ## Running
 
-This system is implemented in the Go programming language. To get
-started, make sure you have Go installed, then issue `go run bob.go`.
-This will compile and run the program in one step. If you want a
-stand-alone executable, `go build bob.go` then run the resulting
-binary, e.g. `./bob`. If you run the program with the `-h` switch,
+This system is implemented in the Go programming language. Install
+into your `$GOPATH` and build in the standard way.
+If you run the program with the `-h` switch,
 you'll get some information about command-line parameters that can be
 set.
 
@@ -44,19 +42,20 @@ should return
 
 
 ## Configuring
+The configuration files are (by default) in the `config` subdirectory. 
 
-The primary configuration is is through a JSON document in the file
-`bob.conf`. There are a couple of examples there to get started. The
-`name`, `version`, and `endpoint` fields are required for each beacon.
-The `datasetIds` field contains a list of data sets to be queried for
-the beacon. The field `queryMap` is used to map the standard names of
-query fields to implementation-specific names. For example, the COSMIC
-beacon uses the string `chrom` instead of the standard `chromosome`.
-On the other hand, the ICGC beacon is completely consistent with the
-standard API, so no adjustments are necessary. Similarly, the fields
-`referenceMap` is used to map standard assembly names for various
-implementations. Note that these mapping functions may disappear in
-future versions as the standard APIs are more uniformly observed.
+Configuration for each beacon is through a JSON document in the
+`config/beacons` subdirectory. There are a couple of examples there to
+get started. The `name`, `version`, and `endpoint` fields are required
+for each beacon. The `datasetIds` field contains a list of data sets
+to be queried for the beacon. The field `queryMap` is used to map the
+standard names of query fields (and assemblies) to
+implementation-specific names. For example, the COSMIC beacon uses the
+string `chrom` instead of the standard `chromosome`. On the other
+hand, the ICGC beacon is completely consistent with the standard API,
+so no adjustments are necessary. Note that these mapping functions may
+disappear in future versions as the standard APIs are more uniformly
+observed.
 
 
 ## Roadmap

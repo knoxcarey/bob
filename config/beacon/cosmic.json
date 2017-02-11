@@ -1,0 +1,16 @@
+{
+    "name": "Cosmic",
+    "version": "0.2",
+    "endpoint": "http://cancer.sanger.ac.uk/api/ga4gh/beacon",
+    "datasetIds": ["cosmic"],
+    "queryMap":{
+	"chromosome": "chrom",
+	"start": "pos",
+	"assemblyId": "ref",
+	"GRCh37": "37",
+	"GRCh38": "38"
+    },
+    "additionalFields": {
+	"format": "json"
+    }
+}

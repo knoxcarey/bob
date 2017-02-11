@@ -1,0 +1,5 @@
+{
+    "name": "ICGC",
+    "version": "0.2",
+    "endpoint": "https://dcc.icgc.org/api/v1/beacon/query"
+}

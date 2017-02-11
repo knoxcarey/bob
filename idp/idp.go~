@@ -1,0 +1,13 @@
+package idp
+
+import (
+	"fmt"
+)
+
+func init() {
+	fmt.Println("Initialized idp")
+}
+
+func SayHi() {
+	fmt.Println("Hi!")
+}

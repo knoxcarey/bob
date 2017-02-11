@@ -150,10 +150,3 @@ func QueryBeaconsSync(query BeaconQuery, timeout int) []byte {
 	return j
 }
 
-
-
-// Turn query into a friendly form
-func friendlyQuery(query BeaconQuery) string {
-	return fmt.Sprintf("%s:%s %s>%s", query["chromosome"], query["start"],
-		query["reference_bases"], query["alternate_bases"])
-}

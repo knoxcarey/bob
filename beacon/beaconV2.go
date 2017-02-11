@@ -1,5 +1,7 @@
 package beacon
 
+// Specific implementations for version 0.2. beacons
+
 import (
 	"encoding/json"
 	"fmt"
@@ -8,7 +10,7 @@ import (
 )
 
 // Type alias for this version
-type beaconV2 BeaconBase
+type beaconV2 BeaconType
 
 // Register this version's type
 func init() {
@@ -16,7 +18,7 @@ func init() {
 	beaconType["0.2"] = reflect.TypeOf(nilStruct).Elem()
 }
 
-
+// Initialize the beacon with defaults appropriate for this version
 func (beacon *beaconV2) initialize() {
 	beacon.QueryMap = make(map[string]string)
 	beacon.QueryMap["chromosome"]     = "chromosome"

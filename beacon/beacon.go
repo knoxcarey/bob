@@ -11,8 +11,8 @@ import (
 )
 
 
-// Beacon contains information about an individual beacon
-type BeaconBase struct {
+// Stores information about an individual beacon
+type BeaconType struct {
 	Name              string                    // Name we give the beacon internally
 	Version           string                    // Beacon API version
 	Endpoint          string                    // URL for beacon
@@ -21,10 +21,10 @@ type BeaconBase struct {
 	QueryMap          map[string]string         // Mapping standard names to query fields
 }
 
-// BeaconQuery is a type synonym for query
+// Type synonym for query
 type BeaconQuery map[string][]string
 
-// BeaconResponse contains the response from the beacon
+// Contains the response from the beacon
 type BeaconResponse struct {
 	Name       string             `json:"name"` 
 	Status     int                `json:"status"`
@@ -47,24 +47,31 @@ var beaconType = map[string]reflect.Type{}
 
 // Read a configuration file, and create version-appropriate beacon structure
 func AddBeaconFromConfig(file string) {
+
+	// Read the configuration file
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.Fatal("unable to read configuration file ", file)
 	}
 
+	// Unmarshal just enough to check the version
 	var js map[string]interface{}
 	if err = json.Unmarshal(buffer, &js); err != nil {
 		log.Fatal("malformed config file ", file)
 	}
 
+	// Create an object of the appropriate version, cast as a generic Beacon
 	beacon := reflect.New(beaconType[js["version"].(string)]).Interface().(Beacon)
 	
+	// Initialize it, giving it version-specific defaults
 	beacon.initialize()
 
+	// Unmarshal the rest of the structure, overriding defaults as necessary
 	if err = json.Unmarshal(buffer, &beacon); err != nil {
 		log.Fatal("malformed config file ", file)
 	}
 
+	// Add to the list of beacons to be queried
 	beacons = append(beacons, beacon)
 }
 

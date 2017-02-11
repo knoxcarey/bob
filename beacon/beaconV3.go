@@ -9,7 +9,7 @@ import (
 )
 
 // Type alias for this version
-type beaconV3 BeaconBase
+type beaconV3 BeaconType
 
 // Register this version's type
 func init() {
@@ -17,6 +17,7 @@ func init() {
 	beaconType["0.3"] = reflect.TypeOf(nilStruct).Elem()
 }
 
+// Initialize the beacon with defaults appropriate for this version
 func (beacon *beaconV3) initialize() {
 	beacon.QueryMap = make(map[string]string)
 	beacon.QueryMap["chromosome"]     = "chromosome"

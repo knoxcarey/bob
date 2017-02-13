@@ -1,5 +1,7 @@
 package beacon
 
+// Specific implementations for version 0.3 beacons
+
 import (
 	"encoding/json"
 	"fmt"
@@ -9,7 +11,7 @@ import (
 )
 
 // Type alias for this version
-type beaconV3 BeaconType
+type beaconV3 beaconStruct
 
 // Register this version's type
 func init() {
@@ -32,7 +34,9 @@ func (beacon *beaconV3) initialize() {
 
 
 func (beacon *beaconV3) parseResponse(status int, raw []byte, err error) *BeaconResponse {
-	response := &BeaconResponse{Name: beacon.Name}	
+	response := &BeaconResponse{Name: beacon.Name,
+		Responses: make(map[string]string),
+		Error: make(map[string]string)}
 
 	if err != nil {
 		addResponseError(response, 400, "could not reach beacon")

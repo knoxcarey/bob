@@ -12,7 +12,7 @@ import (
 
 
 // Stores information about an individual beacon
-type BeaconType struct {
+type beaconStruct struct {
 	Name              string                    // Name we give the beacon internally
 	Version           string                    // Beacon API version
 	Endpoint          string                    // URL for beacon
@@ -33,13 +33,13 @@ type BeaconResponse struct {
 }
 
 // Generic interface for beacons
-type Beacon interface {
+type beacon interface {
 	initialize()
 	query(query *BeaconQuery, ch chan<- BeaconResponse)
 }
 
 // List of beacons to be queried
-var beacons []Beacon
+var beacons []beacon
 
 // Map containing types of beacons, keyed by version number string
 var beaconType = map[string]reflect.Type{}
@@ -60,8 +60,8 @@ func AddBeaconFromConfig(file string) {
 		log.Fatal("malformed config file ", file)
 	}
 
-	// Create an object of the appropriate version, cast as a generic Beacon
-	beacon := reflect.New(beaconType[js["version"].(string)]).Interface().(Beacon)
+	// Create an object of the appropriate version, cast as a generic beacon
+	beacon := reflect.New(beaconType[js["version"].(string)]).Interface().(beacon)
 	
 	// Initialize it, giving it version-specific defaults
 	beacon.initialize()
@@ -78,9 +78,6 @@ func AddBeaconFromConfig(file string) {
 
 // Add an error condition to the response
 func addResponseError(response *BeaconResponse, code int, message string) {
-	if response.Error == nil {
-		response.Error = make(map[string]string)
-	}	
 	response.Error["code"] = strconv.Itoa(code)
 	response.Error["message"] = message
 	response.Status = code
@@ -90,9 +87,6 @@ func addResponseError(response *BeaconResponse, code int, message string) {
 
 // Add a valid result to the response
 func addResponseResult(response *BeaconResponse, key string, value string) {
-	if response.Responses == nil {
-		response.Responses = make(map[string]string)
-	}
 	response.Responses[key] = value
 }
 

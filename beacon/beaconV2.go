@@ -1,6 +1,6 @@
 package beacon
 
-// Specific implementations for version 0.2. beacons
+// Specific implementations for version 0.2 beacons
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 )
 
 // Type alias for this version
-type beaconV2 BeaconType
+type beaconV2 beaconStruct
 
 // Register this version's type
 func init() {
@@ -32,7 +32,9 @@ func (beacon *beaconV2) initialize() {
 }
 
 func (beacon *beaconV2) parseResponse(status int, raw []byte, err error) *BeaconResponse {
-	response := &BeaconResponse{Name: beacon.Name}	
+	response := &BeaconResponse{Name: beacon.Name,
+		Responses: make(map[string]string),
+		Error: make(map[string]string)}
 
 	if err != nil {
 		addResponseError(response, 400, "could not reach beacon")
@@ -65,7 +67,7 @@ func (beacon *beaconV2) query(query *BeaconQuery, ch chan<- BeaconResponse) {
 	qs := beacon.queryString(query)
 	uri := fmt.Sprintf("%s?%s", beacon.Endpoint, qs)
 
-	status, body, err := httpGet(uri)	
+	status, body, err := httpGet(uri)
 	resp := beacon.parseResponse(status, body, err)
 
 	ch <- *resp

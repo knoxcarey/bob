@@ -3,43 +3,25 @@ package main
 // Read in configuration files
 
 import (
-	// "encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 
-	"github.com/knoxcarey/bob/idp"
+	// "github.com/knoxcarey/bob/idp"
 	"github.com/knoxcarey/bob/beacon"
 )
 
 
-// BeaconConfig holds the contents of JSON configuration file
-type BeaconConfig struct {
-	Beacons     []beacon.Beacon     `json:"beacons,omitempty`     // List of beacons
-	IDProviders []idp.IDProvider    `json:"idProviders,omitempty` // Identity providers
-}
-
-
 var (
-	// Configuration
-	Config BeaconConfig                         
-
-	// Location of the configuration directory
-	configDir string
-
-	// Port at which to operate service
-	port int
-
-	// Timeout for beacon queries, in seconds
-	timeout int
+	configDir string                  // Location of the configuration directory
+	port int                          // Port at which to operate service
+	timeout int                       // Timeout for beacon queries, in seconds
 )
 
 const (
-	defaultConfigDir  = "./config"              // Default location of config file
-	defaultPort       = 8080                    // Default port for server
-	defaultTimeout    = 20                      // Default timeout for queries, in seconds
+	defaultConfigDir  = "./config"    // Default location of config file
+	defaultPort       = 8080          // Default port for server
+	defaultTimeout    = 20            // Default timeout for queries, in seconds
 )
 
 
@@ -68,19 +50,17 @@ func readConfig() {
 
 
 // Initialize identity provider structures
-func initializeIDProviders() {
-	for i, _ := range Config.IDProviders {
-		idp := &(Config.IDProviders[i])
-		if idp.ClientIDEnv != "" {
-			idp.ClientID = os.Getenv(idp.ClientIDEnv)
-		}
-		if idp.ClientSecretEnv != "" {
-			idp.ClientSecret = os.Getenv(idp.ClientSecretEnv)
-		}
-		fmt.Println(idp.ClientID)
-		fmt.Println(idp.ClientSecret)
-	}
-}
+// func initializeIDProviders() {
+// 	for i, _ := range Config.IDProviders {
+// 		idp := &(Config.IDProviders[i])
+// 		if idp.ClientIDEnv != "" {
+// 			idp.ClientID = os.Getenv(idp.ClientIDEnv)
+// 		}
+// 		if idp.ClientSecretEnv != "" {
+// 			idp.ClientSecret = os.Getenv(idp.ClientSecretEnv)
+// 		}
+// 	}
+// }
 
 
 
@@ -98,6 +78,5 @@ func parseSwitches() {
 func init() {	
 	parseSwitches()
 	readConfig()
-	// beacon.InitializeBeacons(Config.Beacons)
-	initializeIDProviders()
+	// initializeIDProviders()
 }

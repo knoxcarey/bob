@@ -1,9 +1,8 @@
 package main
 
 /* TODO:
-   * Consider interface for beacons, abstracting different versions
    * Serve webpage to make query, with js connection via websocket to receive responses
-   * Make sure non-exported stuff (that isn't needed for JSON) is lowercase
+   * Extract common code from beacon versions
    * Automated tests
    * Documentation
    * Dockerfile

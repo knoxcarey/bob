@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	// "github.com/knoxcarey/bob/idp"
+	"github.com/knoxcarey/bob/idp"
 	"github.com/knoxcarey/bob/beacon"
 )
 
@@ -25,43 +25,18 @@ const (
 )
 
 
-func readBeaconConfigs() {
-	beaconConfigDir := configDir + "/beacon/"
-	beaconFiles, err := ioutil.ReadDir(beaconConfigDir)
+// Read configuration files from a subdirectory and perform action on each
+func readConfigs(subdir string, action func (file string)) {
+	directory := configDir + "/" + subdir + "/"
+	files, err := ioutil.ReadDir(directory)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, file := range beaconFiles {
-		beacon.AddBeaconFromConfig(beaconConfigDir + file.Name())
+	for _, file := range files {
+		action(directory + file.Name())
 	}
 }
-
-
-func readIDPConfigs() {
-}
-
-
-// readConfig reads in configuration file with the given file name
-func readConfig() {
-	readBeaconConfigs()
-	readIDPConfigs()
-}
-
-
-// Initialize identity provider structures
-// func initializeIDProviders() {
-// 	for i, _ := range Config.IDProviders {
-// 		idp := &(Config.IDProviders[i])
-// 		if idp.ClientIDEnv != "" {
-// 			idp.ClientID = os.Getenv(idp.ClientIDEnv)
-// 		}
-// 		if idp.ClientSecretEnv != "" {
-// 			idp.ClientSecret = os.Getenv(idp.ClientSecretEnv)
-// 		}
-// 	}
-// }
-
 
 
 // Parse command-line switches; set defaults if not present
@@ -77,6 +52,6 @@ func parseSwitches() {
 // Read in configuration and apply defaults
 func init() {	
 	parseSwitches()
-	readConfig()
-	// initializeIDProviders()
+	readConfigs("beacon", func (file string) {beacon.AddBeaconFromConfig(file)})
+	readConfigs("idp", func (file string) {idp.AddIDPFromConfig(file)})
 }

@@ -1,0 +1,16 @@
+<html>
+  <head>
+    <title>Login</title>
+  </head>
+
+  <body>
+    <ul>
+    {{$page := .Page}}
+    {{range $index, $provider := .Providers}}
+      <li>
+	<a href="/login/{{$index}}?page={{$page}}">Login with {{.Name}}</a>
+      </li>
+    {{end}}
+    </ul>
+  </body>  
+</html>

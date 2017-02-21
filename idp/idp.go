@@ -4,7 +4,9 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"log"
+	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 
 	oidc "github.com/coreos/go-oidc"
@@ -25,24 +27,41 @@ type IDPConfig struct {
 	// Need to add config options like icons for redirect page
 }
 
-type idp struct {
+// Internal struct for recording provider info
+type Provider struct {
+	Name       string                           // Friendly name 
 	context    *context.Context                 // OAUTH2.0 context
 	config     *oauth2.Config                   // OAUTH2.0 configuration structure
 	verifier   *oidc.IDTokenVerifier            // Token verifier
 }
 
+// Structure for recording an outstanding auth request
 type authRequest struct {
-	idp *idp                                    // Identity provider auth request went to
+	idp *Provider                               // Identity provider auth request went to
 	url string                                  // Original URL that was requested
 }
 
-var providers []idp                                 // List of identity providers
+// Structure to contain response data from identity provider
+type AuthResponse struct {
+	URL         string
+	AccessToken string
+	IDToken     string
+}
+
+
+var providers []Provider                            // List of identity providers
 var requests  map[string]authRequest                // Maps of requests by ephemeral nonce
 
 
 // Initialize module globals
 func init() {
 	requests  = make(map[string]authRequest)
+}
+
+
+// Return list of providers
+func Providers() []Provider {
+	return providers
 }
 
 
@@ -89,11 +108,12 @@ func AddIDPFromConfig(file string) {
                 ClientID:     idpc.ClientID,
                 ClientSecret: idpc.ClientSecret,
                 Endpoint:     provider.Endpoint(),
-                RedirectURL:  "/auth/bob/callback",
+                RedirectURL:  "http://127.0.0.1:8080/auth/bob/callback", // FIXME!
                 Scopes:       []string{oidc.ScopeOpenID, "profile", "email", "ga4gh"},
         }
 
-	idp := idp{
+	idp := Provider{
+		Name: idpc.Name,
 		context:  &ctx,
 		config:   &config,
 		verifier: verifier,
@@ -104,19 +124,23 @@ func AddIDPFromConfig(file string) {
 }
 
 
-func Authenticate(w http.ResponseWriter, r *http.Request) {
-	state := "42"           // FIXME! should be a nonce
-	idp := &providers[0]    // FIXME! should indicate proper provider
+func Authenticate(pi int, w http.ResponseWriter, r *http.Request) {
+	state := nonce(32)
+	idp := &providers[pi]
+	url, err := url.QueryUnescape(r.URL.Query().Get("page"))
+	if err != nil {
+		http.Error(w, "bad request", http.StatusInternalServerError)
+	}
 	requests[state] = authRequest{
 		idp: idp,
-		url: url,       // FIXME! read from request?
+		url: url,
 	}
 	http.Redirect(w, r, idp.config.AuthCodeURL(state), http.StatusFound)
 }
 
 
 
-func Callback(w http.ResponseWriter, r *http.Request) {
+func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
 	// Extract state from IDP response
 	state := r.URL.Query().Get("state")
 
@@ -130,43 +154,40 @@ func Callback(w http.ResponseWriter, r *http.Request) {
 	oauth2Token, err := idp.config.Exchange(*idp.context, r.URL.Query().Get("code"))
 	if err != nil {
 		http.Error(w, "Failed to exchange token: "+err.Error(), http.StatusInternalServerError)
-		return
+		return AuthResponse{}, err
 	}
 
 	// Get raw version of ID token
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
 		http.Error(w, "No id_token field in oauth2 token.", http.StatusInternalServerError)
-		return
+		return AuthResponse{}, err
 	}
 
 	// Verify it
-	idToken, err := idp.verifier.Verify(*idp.context, rawIDToken)
-	if err != nil {
+	// idToken, err := idp.verifier.Verify(*idp.context, rawIDToken)
+	if _, err := idp.verifier.Verify(*idp.context, rawIDToken); err != nil {
 		http.Error(w, "Failed to verify ID Token: "+err.Error(), http.StatusInternalServerError)
-		return
+		return AuthResponse{}, err
 	}
 
-	// NB: this bit may not be necessary...
-	resp := struct {
-		OAuth2Token   *oauth2.Token
-		IDTokenClaims *json.RawMessage // ID Token payload is just JSON.
-	}{oauth2Token, new(json.RawMessage)}
+	resp := AuthResponse{
+		URL: requests[state].url,
+		AccessToken: oauth2Token.Extra("access_token").(string),
+		IDToken: rawIDToken,
+	}
 
-	if err := idToken.Claims(&resp.IDTokenClaims); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	data, err := json.MarshalIndent(resp, "", "    ")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// End NB: this bit may not be necessary...
-	
-	// FIXME! -- SET COOKIE
-	
-	// Redirect back to originally requested page
-	http.Redirect(w, r, requests[state].url, http.StatusFound)
+	return resp, nil
 }
 
+
+
+// Generate a random nonce string
+var digits = [...]string{"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"}
+func nonce(len int) string {
+	n := ""
+	for i := 0; i < len; i++ {
+		n += digits[rand.Intn(16)]
+	}
+	return n
+}

@@ -165,7 +165,6 @@ func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
 	}
 
 	// Verify it
-	// idToken, err := idp.verifier.Verify(*idp.context, rawIDToken)
 	if _, err := idp.verifier.Verify(*idp.context, rawIDToken); err != nil {
 		http.Error(w, "Failed to verify ID Token: "+err.Error(), http.StatusInternalServerError)
 		return AuthResponse{}, err

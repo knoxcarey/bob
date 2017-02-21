@@ -69,6 +69,16 @@ func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
+// Render query page
+func queryPageHandler(w http.ResponseWriter, r *http.Request) {
+	t := template.Must(template.ParseFiles("static/query.html"))
+	s := struct {
+		Name string
+	}{""}
+	t.Execute(w, s)
+}
+
+
 // Handle beacon query
 func queryHandler(w http.ResponseWriter, r *http.Request) {
 	query := beacon.BeaconQuery(r.URL.Query())
@@ -107,7 +117,8 @@ func main() {
 	fmt.Printf("BoB is listening on port %d\n", port)
 
 	r := mux.NewRouter()
-	r.HandleFunc("/query", authenticated(queryHandler))
+	r.HandleFunc("/query", authenticated(queryPageHandler))
+	r.HandleFunc("/query", authenticated(queryHandler)).Queries()
 	r.HandleFunc("/login/{provider}", loginRedirectHandler)
 	r.HandleFunc("/login", loginPageHandler)
 	r.HandleFunc("/auth/bob/callback", callbackHandler)

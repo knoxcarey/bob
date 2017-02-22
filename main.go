@@ -47,7 +47,7 @@ func authenticated(f http.HandlerFunc) http.HandlerFunc {
 
 // Render login page
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
-	t := template.Must(template.ParseFiles("static/login.html"))
+	t := template.Must(template.ParseFiles("static/template/login.html"))
 	s := struct {
 		Providers []idp.Provider
 		Page      string
@@ -81,7 +81,7 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 
 // Render query page
 func queryPageHandler(w http.ResponseWriter, r *http.Request) {
-	t := template.Must(template.ParseFiles("static/query.html"))
+	t := template.Must(template.ParseFiles("static/template/query.html"))
 	s := struct {
 		Name string
 	}{""}
@@ -141,7 +141,10 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	fmt.Printf("BoB is listening on port %d\n", port)
 
+	fs := http.FileServer(http.Dir("static/"))
+	
 	r := mux.NewRouter()
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 	r.HandleFunc("/query", authenticated(queryHandler))
 	r.HandleFunc("/login/{provider}", loginRedirectHandler)
 	r.HandleFunc("/login", loginPageHandler)

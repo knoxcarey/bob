@@ -46,6 +46,7 @@ type AuthResponse struct {
 	URL         string
 	AccessToken string
 	IDToken     string
+	ExpiresIn   int
 }
 
 
@@ -174,6 +175,7 @@ func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
 		URL: requests[state].url,
 		AccessToken: oauth2Token.Extra("access_token").(string),
 		IDToken: rawIDToken,
+		ExpiresIn: int(oauth2Token.Extra("expires_in").(float64)),
 	}
 
 	return resp, nil

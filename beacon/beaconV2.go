@@ -63,11 +63,11 @@ func (beacon *beaconV2) parseResponse(status int, raw []byte, err error) *Beacon
 }
 
 
-func (beacon *beaconV2) query(query *BeaconQuery, ch chan<- BeaconResponse) {
+func (beacon *beaconV2) query(query *BeaconQuery, accessToken string, idToken string, ch chan<- BeaconResponse) {
 	qs := beacon.queryString(query)
 	uri := fmt.Sprintf("%s?%s", beacon.Endpoint, qs)
 
-	status, body, err := httpGet(uri)
+	status, body, err := httpGet(uri, accessToken, idToken)
 	resp := beacon.parseResponse(status, body, err)
 
 	ch <- *resp

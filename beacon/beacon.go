@@ -35,7 +35,7 @@ type BeaconResponse struct {
 // Generic interface for beacons
 type beacon interface {
 	initialize()
-	query(query *BeaconQuery, ch chan<- BeaconResponse)
+	query(query *BeaconQuery, accessToken string, idToken string, ch chan<- BeaconResponse)
 }
 
 // List of beacons to be queried
@@ -93,12 +93,14 @@ func addResponseResult(response *BeaconResponse, key string, value string) {
 
 
 // Wrapper for HTTP get
-func httpGet(uri string) (status int, body []byte, err error) {
+func httpGet(uri string, accessToken string, idToken string) (status int, body []byte, err error) {
 	client := &http.Client{}
 	var request *http.Request
 	
 	if request, err = http.NewRequest("GET", uri, nil); err == nil {
 		request.Header.Add("Accept", "application/json")
+		request.Header.Add("Authorization", "Bearer " + accessToken)
+		request.Header.Add("IDToken", idToken)
 	} else {
 		return
 	}
@@ -118,14 +120,14 @@ func httpGet(uri string) (status int, body []byte, err error) {
 
 
 // Pose a given query to all of the configured beacons and await results
-func QueryBeaconsSync(query BeaconQuery, timeout int) []byte {
+func QueryBeaconsSync(query BeaconQuery, accessToken string, idToken string, timeout int) []byte {
 	num := len(beacons)
 	ch := make(chan BeaconResponse, num)
 	responses := make([]BeaconResponse, 0, num)
 
 	// Query each beacon
 	for _, b := range beacons {
-		go b.query(&query, ch)
+		go b.query(&query, accessToken, idToken, ch)
 	}
 
 	// Collect responses, or timeout

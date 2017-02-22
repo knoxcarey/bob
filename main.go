@@ -34,7 +34,7 @@ var store = sessions.NewCookieStore([]byte(cookieKey))
 // Authentication middleware. If not authenticated, redirect to login.
 func authenticated(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		session, err := store.Get(r, "session")
+		session, err := store.Get(r, "auth")
 		if (err != nil) || (session.Values["authenticated"] != true) {
 			url := "/login?page=" + url.QueryEscape(r.URL.String())
 			http.Redirect(w, r, url, http.StatusFound)
@@ -70,6 +70,16 @@ func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
 
 
 // Render query page
+func queryHandler(w http.ResponseWriter, r *http.Request) {
+	if len(r.URL.Query()) == 0 {
+		queryPageHandler(w, r)
+	} else {
+		queryAPIHandler(w, r)
+	}
+}
+
+
+// Render query page
 func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.ParseFiles("static/query.html"))
 	s := struct {
@@ -80,9 +90,17 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 
 
 // Handle beacon query
-func queryHandler(w http.ResponseWriter, r *http.Request) {
+func queryAPIHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "auth")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	
+	accessToken := session.Values["access_token"].(string)
+	idToken := session.Values["id_token"].(string)
+
 	query := beacon.BeaconQuery(r.URL.Query())
-	results := beacon.QueryBeaconsSync(query, timeout)
+	results := beacon.QueryBeaconsSync(query, accessToken, idToken, timeout)
 	
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(results)
@@ -91,19 +109,26 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handle OpenID Connect identity provider callbacks
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Process identity provider allback, checking tokens, etc.
 	auth, err := idp.Callback(w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	// Set cookie
-	session, err := store.Get(r, "session")
+	// Set cookie data
+	session, err := store.Get(r, "auth")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	session.Values["authenticated"] = true
 	session.Values["access_token"] = auth.AccessToken
 	session.Values["id_token"] = auth.IDToken
+	session.Options = &sessions.Options{
+		Path: "/",
+		MaxAge: auth.ExpiresIn,
+		HttpOnly: true,
+	}
 	session.Save(r, w)
 		
 	// Redirect to original page
@@ -117,8 +142,7 @@ func main() {
 	fmt.Printf("BoB is listening on port %d\n", port)
 
 	r := mux.NewRouter()
-	r.HandleFunc("/query", authenticated(queryPageHandler))
-	r.HandleFunc("/query", authenticated(queryHandler)).Queries()
+	r.HandleFunc("/query", authenticated(queryHandler))
 	r.HandleFunc("/login/{provider}", loginRedirectHandler)
 	r.HandleFunc("/login", loginPageHandler)
 	r.HandleFunc("/auth/bob/callback", callbackHandler)

@@ -122,6 +122,17 @@ func queryAsyncAPIHandler(w http.ResponseWriter, r *http.Request) {
 	num := beacon.Count()
 	ch := make(chan beacon.BeaconResponse, num)
 
+	session, err := store.Get(r, "auth")
+	if err != nil {
+		fmt.Println("Could not get cookie session: ", err)
+		return
+	}
+
+	fmt.Println(session.Values)
+	
+	accessToken := session.Values["access_token"].(string)
+	idToken := session.Values["id_token"].(string)
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println("Could not open websocket:", err)
@@ -143,15 +154,6 @@ func queryAsyncAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("Query: ", query)
 		
-		session, err := store.Get(r, "auth")
-		if err != nil {
-			fmt.Println("Could not get cookie session: ", err)
-			return
-		}
-
-		accessToken := session.Values["access_token"].(string)
-		idToken := session.Values["id_token"].(string)
-
 		beacon.QueryBeaconsAsync(query, accessToken, idToken, ch)
 
 		// Collect responses, forwarding over websocket, or timeout

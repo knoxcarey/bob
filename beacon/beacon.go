@@ -45,6 +45,12 @@ var beacons []beacon
 var beaconType = map[string]reflect.Type{}
 
 
+// Report number of beacons
+func Count() int {
+	return len(beacons)
+}
+
+
 // Read a configuration file, and create version-appropriate beacon structure
 func AddBeaconFromConfig(file string) {
 
@@ -146,3 +152,10 @@ func QueryBeaconsSync(query BeaconQuery, accessToken string, idToken string, tim
 	return j
 }
 
+
+// Query all beacons, writing results back to channel asynchronously
+func QueryBeaconsAsync(query BeaconQuery, accessToken string, idToken string, ch chan<- BeaconResponse) {
+	for _, b := range beacons {
+		go b.query(&query, accessToken, idToken, ch)
+	}	
+}

@@ -1,10 +1,10 @@
 package main
 /* TODO:
-   * Serve webpage to make query, with js connection via websocket to receive responses
    * Extract common code from beacon versions
    * Automated tests
    * Documentation
    * Dockerfile
+   * Icons, other metadata for beacons and IDPs
    * Integrate OpenID connect 
      * Display interfaces for logging in with various IDPs
      * Send auth headers to beacons along with queries
@@ -94,9 +94,8 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.ParseFiles("static/template/query.html"))
 	s := struct {
 		Name string
-	}{""}
-	// FIXME: need to parameterize with domain at which this site is hosted,
-	// which needs to be a config variable probably.
+		URL  string
+	}{"", "ws://127.0.0.1:8080/queryws"}
 	t.Execute(w, s)
 }
 
@@ -151,8 +150,6 @@ func queryAsyncAPIHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fmt.Println("Query: ", query)
-		
 		beacon.QueryBeaconsAsync(query, accessToken, idToken, ch)
 
 		// Collect responses, forwarding over websocket, or timeout
@@ -160,9 +157,7 @@ func queryAsyncAPIHandler(w http.ResponseWriter, r *http.Request) {
 			select {
 			case r := <-ch:
 				data, _ := json.Marshal(r)
-				if err = conn.WriteMessage(websocket.TextMessage, data); err != nil {
-					http.Error(w, "Websocket error", http.StatusInternalServerError)
-				}
+				conn.WriteMessage(websocket.TextMessage, data)
 			case <- time.After(time.Second * time.Duration(timeout)):
 				break
 			}

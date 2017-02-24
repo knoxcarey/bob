@@ -47,7 +47,7 @@ func (beacon *beaconV2) parseResponse(status int, raw []byte, err error) *Beacon
 	}
 
 	var v2 struct {Response map[string]string}
-	
+
 	if err := json.Unmarshal(raw, &v2); err == nil {
 		if v2.Response["error"] == "" {
 			response.Status = status

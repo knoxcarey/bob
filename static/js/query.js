@@ -1,21 +1,26 @@
-var socket = new WebSocket("ws://127.0.0.1:8080/queryws");
-// FIXME: replace fixed address with parameterized address
+var socket;
 
+function connect(url, input, output) {
+    var inElement = document.getElementById(input);
+    var outElement = document.getElementById(output);
 
-socket.onopen = function () {
-    console.log("Connected to websocket")
+    socket = new WebSocket(url);
+    socket.onopen = () => {console.log("Connected to websocket")};
+    socket.onmessage = (e) => {outElement.innerHTML += e.data};
+
+    button = document.getElementById("queryButton");
+    button.onclick = () => {bobQuery(inElement)};
 }
 
+function bobQuery(queryElement) {
+    var qs = {};
+    var qa = queryElement.value.split(/[^0-9a-zA-Z]/);
 
-
-function bobQuery(queryElement, resultsElement) {
-    socket.onmessage = function (e) {
-	resultsElement.innerHTML += e.data
-    }
-
-    var qa = queryElement.value.split(/[^0-9a-zA-Z]/)
-    // FIXME: eliminate stuff that's not there
-    var qs = {chromosome: qa[0], start: qa[1], referenceBases: qa[2], alternateBases: qa[3]};
+    if (qa[0]) qs.chromosome     = [qa[0]];
+    if (qa[1]) qs.start          = [qa[1]];
+    if (qa[2]) qs.referenceBases = [qa[2]];
+    if (qa[3]) qs.alternateBases = [qa[3]];
+    qs.assemblyId = ["GRCh37"];    // FIXME: assembly should not be hardcoded
     
     socket.send(JSON.stringify(qs));
 }

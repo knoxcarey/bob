@@ -2,11 +2,14 @@
   <head>
     <title>Query</title>
     <script src="/static/js/query.js"></script>
+    <script>
+      window.onload = () => connect({{.URL}}, 'query', 'results');
+    </script>
   </head>
 
   <body>
     <input id="query" type="text"></input>
-    <button onclick="bobQuery(document.getElementById('query'), document.getElementById('results'))">
+    <button id="queryButton">
       Query
     </button>
 

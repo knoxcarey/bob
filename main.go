@@ -53,10 +53,9 @@ var store = sessions.NewCookieStore([]byte(cookieKey))
 // Upgrade structure for websocket connection
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
-	ReadBufferSize: 1024,
-	WriteBufferSize:1024,
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 }
-
 
 
 // Authentication middleware. If not authenticated, redirect to login.
@@ -98,42 +97,32 @@ func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
 
 
 // Render query page
-func queryHandler(w http.ResponseWriter, r *http.Request) {
-	if len(r.URL.Query()) == 0 {
-		queryPageHandler(w, r)
-	} else {
-		queryAPIHandler(w, r)
-	}
-}
-
-
-// Render query page
 func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.ParseFiles("static/template/query.html"))
 	s := struct {
 		Name string
 		URL  string
-	}{"", "ws://127.0.0.1:8080/queryws"}
+	}{"", "ws://" + host + ":" + strconv.Itoa(port) + "/ws"}
 	t.Execute(w, s)
 }
 
 
 // Handle beacon query
-func queryAPIHandler(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "auth")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+// func queryAPIHandler(w http.ResponseWriter, r *http.Request) {
+// 	session, err := store.Get(r, "auth")
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	}
 	
-	accessToken := session.Values["access_token"].(string)
-	idToken := session.Values["id_token"].(string)
+// 	accessToken := session.Values["access_token"].(string)
+// 	idToken := session.Values["id_token"].(string)
 
-	query := beacon.BeaconQuery(r.URL.Query())
-	results := beacon.QueryBeaconsSync(query, accessToken, idToken, timeout)
+// 	query := beacon.BeaconQuery(r.URL.Query())
+// 	results := beacon.QueryBeaconsSync(query, accessToken, idToken, timeout)
 	
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(results)
-}
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.Write(results)
+// }
 
 
 // Handle beacon query; return results asynchronously via websocket
@@ -221,11 +210,11 @@ func main() {
 	
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
-	r.HandleFunc("/query", authenticated(queryHandler))
-	r.HandleFunc("/queryws", queryAsyncAPIHandler)
+	r.HandleFunc("/ws", queryAsyncAPIHandler)
 	r.HandleFunc("/login/{provider}", loginRedirectHandler)
 	r.HandleFunc("/login", loginPageHandler)
 	r.HandleFunc("/auth/bob/callback", callbackHandler)
+	r.HandleFunc("/query", authenticated(queryPageHandler))
 
 	http.ListenAndServe(fmt.Sprintf(":%d", port), r)
 }

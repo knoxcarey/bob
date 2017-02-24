@@ -95,6 +95,8 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 	s := struct {
 		Name string
 	}{""}
+	// FIXME: need to parameterize with domain at which this site is hosted,
+	// which needs to be a config variable probably.
 	t.Execute(w, s)
 }
 
@@ -124,12 +126,9 @@ func queryAsyncAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	session, err := store.Get(r, "auth")
 	if err != nil {
-		fmt.Println("Could not get cookie session: ", err)
 		return
 	}
 
-	fmt.Println(session.Values)
-	
 	accessToken := session.Values["access_token"].(string)
 	idToken := session.Values["id_token"].(string)
 

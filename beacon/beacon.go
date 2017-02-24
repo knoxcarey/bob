@@ -67,7 +67,8 @@ func AddBeaconFromConfig(file string) {
 	}
 
 	// Create an object of the appropriate version, cast as a generic beacon
-	beacon := reflect.New(beaconType[js["version"].(string)]).Interface().(beacon)
+	version := js["version"].(string)
+	beacon := reflect.New(beaconType[version]).Interface().(beacon)
 	
 	// Initialize it, giving it version-specific defaults
 	beacon.initialize()
@@ -88,7 +89,6 @@ func addResponseError(response *BeaconResponse, code int, message string) {
 	response.Error["message"] = message
 	response.Status = code
 }
-
 
 
 // Add a valid result to the response

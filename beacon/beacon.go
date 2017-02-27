@@ -33,6 +33,7 @@ type beaconStruct struct {
 	Name              string                    // Name we give the beacon internally
 	Version           string                    // Beacon API version
 	Endpoint          string                    // URL for beacon
+	Icon              string                    // Name of icon file in /static/img/
 	Datasets          []string                  // Datasets to query
 	AdditionalFields  map[string]string         // Additional query fields to include
 	QueryMap          map[string]string         // Mapping standard names to query fields

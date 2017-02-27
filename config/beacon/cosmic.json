@@ -2,6 +2,7 @@
     "name": "Cosmic",
     "version": "0.2",
     "endpoint": "http://cancer.sanger.ac.uk/api/ga4gh/beacon",
+    "icon": "sanger.png",
     "datasetIds": ["cosmic"],
     "queryMap":{
 	"chromosome": "chrom",

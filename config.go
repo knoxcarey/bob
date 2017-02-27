@@ -68,7 +68,6 @@ func parseSwitches() {
 }
 
 
-
 // Read in configuration and apply defaults
 func init() {	
 	parseSwitches()

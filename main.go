@@ -126,7 +126,7 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 
 
 // Handle beacon query; return results asynchronously via websocket
-func queryAsyncAPIHandler(w http.ResponseWriter, r *http.Request) {
+func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 	num := beacon.Count()
 	ch := make(chan beacon.BeaconResponse, num)
 
@@ -210,7 +210,7 @@ func main() {
 	
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
-	r.HandleFunc("/ws", queryAsyncAPIHandler)
+	r.HandleFunc("/ws", queryAsyncHandler)
 	r.HandleFunc("/login/{provider}", loginRedirectHandler)
 	r.HandleFunc("/login", loginPageHandler)
 	r.HandleFunc("/auth/bob/callback", callbackHandler)

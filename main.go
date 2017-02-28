@@ -122,13 +122,10 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handle beacon query
 // func queryAPIHandler(w http.ResponseWriter, r *http.Request) {
-// 	session, err := store.Get(r, "auth")
+// 	accessToken, idToken, err := extractToken(r)
 // 	if err != nil {
 // 		http.Error(w, err.Error(), http.StatusInternalServerError)
 // 	}
-	
-// 	accessToken := session.Values["access_token"].(string)
-// 	idToken := session.Values["id_token"].(string)
 
 // 	query := beacon.BeaconQuery(r.URL.Query())
 // 	results := beacon.QueryBeaconsSync(query, accessToken, idToken, timeout)

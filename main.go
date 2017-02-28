@@ -144,32 +144,30 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			return
-		}
-
-		query := make(map[string][]string)
-
-		if err := json.Unmarshal(msg, &query); err != nil {
-			fmt.Println("Could not unmarshal JSON: ", err)
-			return
-		}
-
-		beacon.QueryBeaconsAsync(query, accessToken, idToken, ch)
-
-		// Collect responses, forwarding over websocket, or timeout
-		for i := 0; i < num; i++ {
-			select {
-			case r := <-ch:
-				data, _ := json.Marshal(r)
-				conn.WriteMessage(websocket.TextMessage, data)
-			case <- time.After(time.Second * time.Duration(timeout)):
-				break
-			}
-		} 	
+	_, msg, err := conn.ReadMessage()
+	if err != nil {
+		return
 	}
+
+	query := make(map[string][]string)
+
+	if err := json.Unmarshal(msg, &query); err != nil {
+		fmt.Println("Could not unmarshal JSON: ", err)
+		return
+	}
+
+	beacon.QueryBeaconsAsync(query, accessToken, idToken, ch)
+
+	// Collect responses, forwarding over websocket, or timeout
+	for i := 0; i < num; i++ {
+		select {
+		case r := <-ch:
+			data, _ := json.Marshal(r)
+			conn.WriteMessage(websocket.TextMessage, data)
+		case <- time.After(time.Second * time.Duration(timeout)):
+			return
+		}
+	} 	
 }
 
 

@@ -207,7 +207,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 // Entry point
 func main() {
-	fmt.Printf("BoB is listening on port %d\n", port)
+	fmt.Printf("BoB is listening on %s:%d\n", host, port)
 
 	fs := http.FileServer(http.Dir("static/"))
 	

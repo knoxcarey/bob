@@ -72,6 +72,19 @@ func authenticated(f http.HandlerFunc) http.HandlerFunc {
 }
 
 
+// Extract OAUTH/OIDC tokens from request
+func extractTokens(r *http.Request) (accessToken string, idToken string, err error) {
+	session, err := store.Get(r, "auth")
+	if err != nil {
+		return
+	}
+
+	accessToken = session.Values["access_token"].(string)
+	idToken = session.Values["id_token"].(string)
+	return
+}
+
+
 // Render login page
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.ParseFiles("static/template/login.html"))
@@ -130,17 +143,13 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 	num := beacon.Count()
 	ch := make(chan beacon.BeaconResponse, num)
 
-	session, err := store.Get(r, "auth")
+	accessToken, idToken, err := extractTokens(r)
 	if err != nil {
 		return
 	}
-
-	accessToken := session.Values["access_token"].(string)
-	idToken := session.Values["id_token"].(string)
-
+	
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("Could not open websocket:", err)
 		return
 	}
 
@@ -152,7 +161,6 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 	query := make(map[string][]string)
 
 	if err := json.Unmarshal(msg, &query); err != nil {
-		fmt.Println("Could not unmarshal JSON: ", err)
 		return
 	}
 

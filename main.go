@@ -217,7 +217,7 @@ func main() {
 	r.HandleFunc("/login/{provider}", loginRedirectHandler)
 	r.HandleFunc("/login", loginPageHandler)
 	r.HandleFunc("/auth/bob/callback", callbackHandler)
-	r.HandleFunc("/query", authenticated(queryPageHandler))
+	r.HandleFunc("/", authenticated(queryPageHandler))
 
 	http.ListenAndServe(fmt.Sprintf(":%d", port), r)
 }

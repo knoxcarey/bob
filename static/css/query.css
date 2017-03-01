@@ -1,0 +1,20 @@
+.beacon {
+    height: 4em;
+    padding: 0.25em;
+}
+
+.beacon img {
+    height: 4em;
+}
+
+.beacon .name {
+    height: 4em;
+    line-height: 4em;
+    
+    padding: 0.25em;
+}
+
+.beacon .response {
+    height: 4em;
+    padding: 0.25em;
+}

@@ -50,6 +50,7 @@ func (beacon *beaconV2) initialize() {
 
 func (beacon *beaconV2) parseResponse(status int, raw []byte, err error) *BeaconResponse {
 	response := &BeaconResponse{Name: beacon.Name,
+		Icon: beacon.Icon, 
 		Responses: make(map[string]string),
 		Error: make(map[string]string)}
 

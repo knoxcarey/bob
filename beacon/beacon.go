@@ -46,6 +46,7 @@ type BeaconQuery map[string][]string
 type BeaconResponse struct {
 	Name       string             `json:"name"` 
 	Status     int                `json:"status"`
+	Icon       string             `json:"icon,omitempty"`
 	Responses  map[string]string  `json:"responses,omitempty"` 
 	Error      map[string]string  `json:"error,omitempty"`              
 }

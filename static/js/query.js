@@ -8,6 +8,11 @@ var button;
 // Connect to various elements on the page
 function connect(u, i, o, b) {
     inElement = document.getElementById(i);
+    inElement.onkeypress = (e) => {
+	if (e.charCode == 13) {
+	    bobQuery(inElement);
+	}
+    };
     outElement = document.getElementById(o);
     url = u;
     
@@ -40,7 +45,7 @@ function displayResult(r) {
     var json = JSON.parse(r);
     var result = document.createElement('div');
     result.className += 'beacon';
-    result.innerHTML = '<img class="icon" src="/static/img/' + (json.icon || "default.png") + '"/>';
+    result.innerHTML = '<span class="image"><img class="icon" src="/static/img/' + (json.icon || "default.png") + '"/></span>';
     result.innerHTML += '<span class="name">' + json.name + '</span>';
 
     for (var dataset in json.responses) {

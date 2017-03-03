@@ -2,13 +2,14 @@
   <head>
     <title>Query</title>
     <script src="/static/js/query.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/query.css"></link>
     <script>
       window.onload = () => connect({{.URL}}, 'query', 'results', 'queryButton');
     </script>
   </head>
 
   <body>
-    <input id="query" type="text"></input>
+    <input id="query" type="text" placeholder="13:32900706 >T"></input>
     <button id="queryButton">
       Query
     </button>

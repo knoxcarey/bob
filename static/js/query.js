@@ -44,13 +44,13 @@ function bobQuery(queryElement) {
 function displayResult(r) {
     var json = JSON.parse(r);
     var result = document.createElement('div');
-    result.className += 'beacon';
-    result.innerHTML = '<span class="image"><img class="icon" src="/static/img/' + (json.icon || "default.png") + '"/></span>';
-    result.innerHTML += '<span class="name">' + json.name + '</span>';
+    result.className += 'beacon clearfix';
+    result.innerHTML = '<div class="image"><img class="icon" src="/static/img/' + (json.icon || "default.png") + '"/></div>';
+    result.innerHTML += '<div class="name">' + json.name + '</div>';
 
     for (var dataset in json.responses) {
 	if (json.responses.hasOwnProperty(dataset)) {
-	    result.innerHTML += '<span class="response">' + json.responses[dataset] + '</span>';
+	    result.innerHTML += '<div class="response">' + json.responses[dataset] + '</div>';
 	}
     }
     

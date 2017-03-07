@@ -2,35 +2,56 @@ body {
     width: 600px;
     margin-left: auto;
     margin-right: auto;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 100;
+}
+
+#title {
+    font-weight: 300;
+    font-size: xx-large;
+    text-align: center;
+    margin: 1em 0;
 }
 
 #results {
-    margin-top: 1em;
+    margin-top: 2em;
 }
 
 .beacon {
     height: 4em;
     padding: 0.25em;
+    width: 100%;
 }
 
 .beacon .image {
     height: 4em;
-    width:  13.75em;
+    width: 40%;
+    text-align: center;
+    float: left;
 }
 
 .beacon img {
     height: 4em;
 }
 
-.beacon .name {
+.beacon .beaconname {
     height: 4em;
-    width:  
+    width: 20%
     padding: 0.25em;
+    float: left;
 }
 
 .beacon .response {
     height: 4em;
+    width: 40%;
     padding: 0.25em;
+    float: left;
+}
+
+.clearfix::after {
+    content: "";
+    clear: both;
+    display: table;
 }
 
 #query:placeholder-shown {
@@ -38,16 +59,56 @@ body {
 }
 
 #query {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
     display: block;
-    width: 100%;
+    width: 80%;
     height: 34px;
     padding: 6px 12px;
     font-size: 14px;
     line-height: 1.5;
     color: #555;
+    float: left;
     background-color: #fff;
     border: 1px solid #ccc;
     border-radius: 4px;
     -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
     box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
 }
+
+#query:focus {
+    outline: 0;
+    border: solid;
+    border-width: 1px;
+    border-color: #0000ff;
+    border-radius: 4px;
+}
+
+#queryButton {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
+    float: right;
+    width: 15%;
+    height: 34px;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#queryButton:hover {
+    color: #0000ff;
+    border-color: #0000ff;
+}
+
+#queryButton:focus {
+    outline: 0;
+    border: solid;
+    border-width: 1px;
+    border-color: #0000ff;
+    border-radius: 4px;
+}
+
+

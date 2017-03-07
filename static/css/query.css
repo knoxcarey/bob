@@ -1,9 +1,10 @@
 body {
-    width: 600px;
+    width: 40em;
     margin-left: auto;
     margin-right: auto;
     font-family: 'Roboto', sans-serif;
     font-weight: 100;
+    background-color: #f5f5f5;
 }
 
 #title {
@@ -13,14 +14,21 @@ body {
     margin: 1em 0;
 }
 
+#input {
+    margin-bottom: 2em;
+}
+
 #results {
     margin-top: 2em;
 }
 
 .beacon {
-    height: 4em;
-    width: 100%;
-    margin-bottom: 0.5em;
+    width: 38em;
+    margin-bottom: 1em;
+    background: #ffffff;
+    padding: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
 .beacon .image {
@@ -110,4 +118,19 @@ body {
     border-radius: 4px;
 }
 
+#loader {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #888888;
+    border-radius: 50%;
+    width: 1.5em;
+    height: 1.5em;
+    animation: spin 1s linear infinite;
+    margin-left: auto;
+    margin-right: auto;
+    visibility: hidden;
+}
 
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

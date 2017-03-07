@@ -112,10 +112,13 @@ func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
 // Render query page
 func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.ParseFiles("static/template/query.html"))
+	url := "ws://" + host + ":" + strconv.Itoa(port) + "/ws"
 	s := struct {
-		Name string
-		URL  string
-	}{"", "ws://" + host + ":" + strconv.Itoa(port) + "/ws"}
+		Name    string
+		URL     string
+		Timeout int
+		Count   int
+	}{"", url, timeout, beacon.Count()}
 	t.Execute(w, s)
 }
 

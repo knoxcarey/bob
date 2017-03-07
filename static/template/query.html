@@ -5,7 +5,7 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="/static/css/query.css"></link>
     <script>
-      window.onload = () => connect({{.URL}}, 'query', 'results', 'queryButton');
+      window.onload = () => connect({{.URL}}, 'query', 'results', 'queryButton', 'loader', {{.Timeout}}, {{.Count}});
     </script>
   </head>
 
@@ -18,6 +18,8 @@
       <input id="query" tabindex="1" type="text" placeholder="13:32900706 >T"></input>
       <button id="queryButton" tabindex="2">Query</button>
     </div>
+
+    <div id="loader"></div>
 
     <div id="results">
     </div>

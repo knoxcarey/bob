@@ -3,10 +3,15 @@ var url;
 var inElement;
 var outElement;
 var button;
+var timer;
+var timeout;
+var count;
+var counter;
+var loader;
 
 
 // Connect to various elements on the page
-function connect(u, i, o, b) {
+function connect(u, i, o, b, l, t, n) {
     inElement = document.getElementById(i);
     inElement.onkeypress = (e) => {
 	if (e.charCode == 13) {
@@ -18,6 +23,10 @@ function connect(u, i, o, b) {
     
     button = document.getElementById(b);
     button.onclick = () => {bobQuery(inElement)};
+
+    loader = document.getElementById(l);
+    timeout = t * 1000;
+    count = n;
 
     addTestData();
 }
@@ -44,8 +53,17 @@ function bobQuery(queryElement) {
     if (outElement.innerHTML) {outElement.innerHTML = null;}    
     if (socket) {socket.close();}
     socket = new WebSocket(url);    
-    socket.onmessage = (e) => {displayResult(e.data)};
+    socket.onmessage = (e) => {
+	counter = counter - 1;
+	if(counter == 0) {cancelQuery();}
+	displayResult(e.data)
+    };
     socket.onopen = () => {socket.send(JSON.stringify(qs))};
+    counter = count;
+    clearTimeout(timer);
+    timer = setTimeout(cancelQuery, timeout);
+    loader.style.visibility = 'visible';
+    loader.style['animation-play-state'] = 'initial';
 }
 
 
@@ -66,3 +84,9 @@ function displayResult(r) {
     outElement.appendChild(result);
 }
 
+
+// Query is finished
+function cancelQuery() {
+    loader.style.visibility = 'hidden';
+    loader.style['animation-play-state'] = 'paused';
+}

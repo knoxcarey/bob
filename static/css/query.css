@@ -19,14 +19,13 @@ body {
 
 .beacon {
     height: 4em;
-    padding: 0.25em;
     width: 100%;
+    margin-bottom: 0.5em;
 }
 
 .beacon .image {
     height: 4em;
     width: 40%;
-    text-align: center;
     float: left;
 }
 
@@ -36,15 +35,15 @@ body {
 
 .beacon .beaconname {
     height: 4em;
-    width: 20%
-    padding: 0.25em;
+    line-height: 4em;
+    width: 20%;
     float: left;
 }
 
 .beacon .response {
     height: 4em;
+    line-height: 4em;
     width: 40%;
-    padding: 0.25em;
     float: left;
 }
 

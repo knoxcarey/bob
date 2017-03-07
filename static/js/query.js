@@ -18,6 +18,15 @@ function connect(u, i, o, b) {
     
     button = document.getElementById(b);
     button.onclick = () => {bobQuery(inElement)};
+
+    addTestData();
+}
+
+
+// Insert test data into the page (for development)
+function addTestData() {
+    displayResult('{"name":"ICGC","status":200,"responses":{"ICGC":"true"}}');
+    displayResult('{"name":"Cosmic","status":200,"icon":"sanger.png","responses":{"Cosmic":"true"}}');
 }
 
 
@@ -46,14 +55,14 @@ function displayResult(r) {
     var result = document.createElement('div');
     result.className += 'beacon clearfix';
     result.innerHTML = '<div class="image"><img class="icon" src="/static/img/' + (json.icon || "default.png") + '"/></div>';
-    result.innerHTML += '<div class="name">' + json.name + '</div>';
+    result.innerHTML += '<div class="beaconname">' + json.name + '</div>';
 
     for (var dataset in json.responses) {
 	if (json.responses.hasOwnProperty(dataset)) {
 	    result.innerHTML += '<div class="response">' + json.responses[dataset] + '</div>';
 	}
     }
-    
+
     outElement.appendChild(result);
 }
 

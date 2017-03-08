@@ -62,7 +62,7 @@ function bobQuery(queryElement) {
     counter = count;
     clearTimeout(timer);
     timer = setTimeout(cancelQuery, timeout);
-    loader.style.visibility = 'visible';
+    loader.style['visibility'] = 'visible';
     loader.style['animation-play-state'] = 'initial';
 }
 
@@ -87,6 +87,6 @@ function displayResult(r) {
 
 // Query is finished
 function cancelQuery() {
-    loader.style.visibility = 'hidden';
+    loader.style['visibility'] = 'hidden';
     loader.style['animation-play-state'] = 'paused';
 }

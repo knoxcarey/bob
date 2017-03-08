@@ -134,3 +134,13 @@ body {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+@keyframes hideAndMinimize {
+    from {visibility: visible;}
+    to   {visibility: hidden;}
+}
+
+@keyframes unhide {
+    from {visibility: hidden;}
+    to   {visibility: visible;}
+}

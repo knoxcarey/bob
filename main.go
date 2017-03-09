@@ -125,7 +125,7 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handle beacon query
 // func queryAPIHandler(w http.ResponseWriter, r *http.Request) {
-// 	accessToken, idToken, err := extractToken(r)
+// 	accessToken, idToken, err := extractTokens(r)
 // 	if err != nil {
 // 		http.Error(w, err.Error(), http.StatusInternalServerError)
 // 	}
@@ -147,7 +147,7 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return

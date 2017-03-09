@@ -50,6 +50,7 @@ type Provider struct {
 	context    *context.Context                 // OAUTH2.0 context
 	config     *oauth2.Config                   // OAUTH2.0 configuration structure
 	verifier   *oidc.IDTokenVerifier            // Token verifier
+	provider   *oidc.Provider                   // Pointer to provider in OIDC library
 }
 
 // Structure for recording an outstanding auth request
@@ -64,6 +65,7 @@ type AuthResponse struct {
 	AccessToken string
 	IDToken     string
 	ExpiresIn   int
+	UserInfo    *oidc.UserInfo
 }
 
 
@@ -135,6 +137,7 @@ func AddIDPFromConfig(file string) {
 		context:  &ctx,
 		config:   &config,
 		verifier: verifier,
+		provider: provider,
 	}
 		
 	// Add to the list of providers
@@ -188,11 +191,19 @@ func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
 		return AuthResponse{}, err
 	}
 
+	// Fetch userinfo
+	userInfo, err := idp.provider.UserInfo(*idp.context, oauth2.StaticTokenSource(oauth2Token))
+	if err != nil {
+		http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
+		return AuthResponse{}, err
+	}
+
 	resp := AuthResponse{
 		URL: requests[state].url,
 		AccessToken: oauth2Token.Extra("access_token").(string),
 		IDToken: rawIDToken,
 		ExpiresIn: int(oauth2Token.Extra("expires_in").(float64)),
+		UserInfo: userInfo,
 	}
 
 	return resp, nil

@@ -110,6 +110,30 @@ func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
+// Logout
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "auth")
+	if err != nil {
+		http.Error(w, "Invalid session", http.StatusInternalServerError)
+		return
+	}
+
+	pi := session.Values["provider_idx"].(int)
+	accessToken := session.Values["access_token"].(string)
+	
+	idp.Logout(pi, accessToken)
+	session.Options = &sessions.Options{
+		Path: "/",
+		MaxAge: -1,
+		HttpOnly: true,
+	}
+	session.Save(r, w)
+	
+	// Redirect to login
+	http.Redirect(w, r, "/login?page=/", http.StatusFound)
+}
+
+
 // Render query page
 func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 	_, _, name, err := extractTokens(r)
@@ -173,7 +197,7 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 // Handle OpenID Connect identity provider callbacks
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
 
-	// Process identity provider allback, checking tokens, etc.
+	// Process identity provider callback, checking tokens, etc.
 	auth, err := idp.Callback(w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -188,6 +212,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["access_token"] = auth.AccessToken
 	session.Values["id_token"] = auth.IDToken
 	session.Values["name"] = auth.Name
+	session.Values["provider_idx"] = auth.ProviderIdx
 	session.Options = &sessions.Options{
 		Path: "/",
 		MaxAge: auth.ExpiresIn,
@@ -210,6 +235,7 @@ func main() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 	r.HandleFunc("/ws", queryAsyncHandler)
 	r.HandleFunc("/login/{provider}", loginRedirectHandler)
+	r.HandleFunc("/logout", logoutHandler)
 	r.HandleFunc("/login", loginPageHandler)
 	r.HandleFunc("/auth/bob/callback", callbackHandler)
 	r.HandleFunc("/", authenticated(queryPageHandler))

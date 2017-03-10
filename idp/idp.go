@@ -19,12 +19,15 @@ package idp
 
 import (
 	"io/ioutil"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	oidc "github.com/coreos/go-oidc"
 	"golang.org/x/net/context"
@@ -36,6 +39,7 @@ import (
 type IDPConfig struct {
 	Name            string                      // Name of the identity provider
 	Endpoint        string                      // Endpoint for ID services
+	Revocation      string                      // Revocation endpoint, cf RFC 7009
 	ClientID        string                      // Client ID embedded directly
 	ClientIDEnv     string                      // Environment variable with Client ID
 	ClientSecret    string                      // Client secret embedded directly
@@ -51,21 +55,23 @@ type Provider struct {
 	config     *oauth2.Config                   // OAUTH2.0 configuration structure
 	verifier   *oidc.IDTokenVerifier            // Token verifier
 	provider   *oidc.Provider                   // Pointer to provider in OIDC library
+	idpconfig  *IDPConfig                       // Pointer to struct read from config file
 }
 
 // Structure for recording an outstanding auth request
 type authRequest struct {
-	idp *Provider                               // Identity provider auth request went to
-	url string                                  // Original URL that was requested
+	idpi int                                    // Index of dentity provider auth request went to
+	url  string                                 // Original URL that was requested
 }
 
 // Structure to contain response data from identity provider
 type AuthResponse struct {
-	URL         string
-	AccessToken string
-	IDToken     string
-	ExpiresIn   int
-	Name        string
+	URL         string                          // URL originally requested
+	AccessToken string                          // Access token for session
+	IDToken     string                          // Identity token
+	ExpiresIn   int                             // Timeout for session
+	Name        string                          // Authenticated user's name
+	ProviderIdx int                             // Index of provider to which authenticated
 }
 
 
@@ -138,6 +144,7 @@ func AddIDPFromConfig(file string) {
 		config:   &config,
 		verifier: verifier,
 		provider: provider,
+		idpconfig: &idpc,
 	}
 		
 	// Add to the list of providers
@@ -153,20 +160,39 @@ func Authenticate(pi int, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusInternalServerError)
 	}
 	requests[state] = authRequest{
-		idp: idp,
+		idpi: pi,
 		url: url,
 	}
 	http.Redirect(w, r, idp.config.AuthCodeURL(state), http.StatusFound)
 }
 
 
+// Send revocation request to IdP
+func Logout(pi int, accessToken string) {
+	idp := &providers[pi]
+	auth := fmt.Sprintf("%s:%s", idp.idpconfig.ClientID, idp.idpconfig.ClientSecret)
+	encoded := base64.StdEncoding.EncodeToString([]byte(auth))
+	form := url.Values{}
+	form.Add("token", accessToken)
+	form.Add("token_type_hint", "access_token")
+	url := idp.idpconfig.Revocation
+	if r, e := http.NewRequest("POST", url, strings.NewReader(form.Encode())); e == nil {
+		r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		r.Header.Add("Authorization", "Basic " + encoded)
+		client := &http.Client{}
+		client.Do(r)
+	}
+}
 
+
+// Handle callback from IdP
 func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
 	// Extract state from IDP response
 	state := r.URL.Query().Get("state")
 
 	// Determine which IDP that request was to
-	idp := requests[state].idp
+	idpi := requests[state].idpi
+	idp := &providers[idpi]
 
 	// Make sure requests map gets cleaned up when we're done
 	defer delete(requests, state)
@@ -202,11 +228,13 @@ func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
 	userInfo.Claims(&claims)
 	name := claims["given_name"].(string) + " " + claims["family_name"].(string)
 	
+	// FIXME: want to return identifier for which provider auth'd us in some form. Index?
 	resp := AuthResponse{
 		URL: requests[state].url,
 		AccessToken: oauth2Token.Extra("access_token").(string),
 		IDToken: rawIDToken,
 		ExpiresIn: int(oauth2Token.Extra("expires_in").(float64)),
+		ProviderIdx: idpi,
 		Name: name,
 	}
 

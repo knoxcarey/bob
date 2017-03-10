@@ -73,7 +73,7 @@ func authenticated(f http.HandlerFunc) http.HandlerFunc {
 
 
 // Extract OAUTH/OIDC tokens from request
-func extractTokens(r *http.Request) (accessToken string, idToken string, err error) {
+func extractTokens(r *http.Request) (accessToken string, idToken string, name string, err error) {
 	session, err := store.Get(r, "auth")
 	if err != nil {
 		return
@@ -81,6 +81,7 @@ func extractTokens(r *http.Request) (accessToken string, idToken string, err err
 
 	accessToken = session.Values["access_token"].(string)
 	idToken = session.Values["id_token"].(string)
+	name = session.Values["name"].(string)
 	return
 }
 
@@ -111,6 +112,11 @@ func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
 
 // Render query page
 func queryPageHandler(w http.ResponseWriter, r *http.Request) {
+	_, _, name, err := extractTokens(r)
+	if err != nil {
+		return
+	}
+
 	t := template.Must(template.ParseFiles("static/template/query.html"))
 	url := "ws://" + host + ":" + strconv.Itoa(port) + "/ws"
 	s := struct {
@@ -118,24 +124,9 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 		URL     string
 		Timeout int
 		Count   int
-	}{"", url, timeout, beacon.Count()}
+	}{name, url, timeout, beacon.Count()}
 	t.Execute(w, s)
 }
-
-
-// Handle beacon query
-// func queryAPIHandler(w http.ResponseWriter, r *http.Request) {
-// 	accessToken, idToken, err := extractTokens(r)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 	}
-
-// 	query := beacon.BeaconQuery(r.URL.Query())
-// 	results := beacon.QueryBeaconsSync(query, accessToken, idToken, timeout)
-	
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.Write(results)
-// }
 
 
 // Handle beacon query; return results asynchronously via websocket
@@ -143,7 +134,7 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 	num := beacon.Count()
 	ch := make(chan beacon.BeaconResponse, num)
 
-	accessToken, idToken, err := extractTokens(r)
+	accessToken, idToken, _, err := extractTokens(r)
 	if err != nil {
 		return
 	}
@@ -196,6 +187,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["authenticated"] = true
 	session.Values["access_token"] = auth.AccessToken
 	session.Values["id_token"] = auth.IDToken
+	session.Values["name"] = auth.Name
 	session.Options = &sessions.Options{
 		Path: "/",
 		MaxAge: auth.ExpiresIn,

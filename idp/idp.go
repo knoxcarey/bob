@@ -65,7 +65,7 @@ type AuthResponse struct {
 	AccessToken string
 	IDToken     string
 	ExpiresIn   int
-	UserInfo    *oidc.UserInfo
+	Name        string
 }
 
 
@@ -198,12 +198,16 @@ func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
 		return AuthResponse{}, err
 	}
 
+	var claims map[string]interface{}
+	userInfo.Claims(&claims)
+	name := claims["given_name"].(string) + " " + claims["family_name"].(string)
+	
 	resp := AuthResponse{
 		URL: requests[state].url,
 		AccessToken: oauth2Token.Extra("access_token").(string),
 		IDToken: rawIDToken,
 		ExpiresIn: int(oauth2Token.Extra("expires_in").(float64)),
-		UserInfo: userInfo,
+		Name: name,
 	}
 
 	return resp, nil

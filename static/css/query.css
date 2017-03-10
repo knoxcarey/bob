@@ -14,6 +14,12 @@ body {
     margin: 1em 0;
 }
 
+#user {
+    margin-bottom: 2em;
+    width: 100%;
+    text-align: center;
+}
+
 #input {
     margin-bottom: 2em;
 }

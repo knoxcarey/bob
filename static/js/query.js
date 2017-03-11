@@ -28,7 +28,7 @@ function connect(u, i, o, b, l, t, n) {
     timeout = t * 1000;
     count = n;
 
-    addTestData();
+    // addTestData();
 }
 
 

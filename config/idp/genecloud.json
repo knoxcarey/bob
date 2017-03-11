@@ -1,7 +1,6 @@
 {
     "name": "Genecloud Test IdP",
     "endpoint": "https://login.dev.genecloud.com",
-    "revocation": "https://login.dev.genecloud.com/openid/revoke",
     "clientIdEnv": "GENECLOUD_CLIENT_ID",
     "clientSecretEnv": "GENECLOUD_CLIENT_SECRET",
     "redirectURL": "http://127.0.0.1:5556/auth/genecloud/callback"

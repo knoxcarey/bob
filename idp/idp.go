@@ -100,7 +100,7 @@ func AddIDPFromConfig(file string) {
 		log.Fatal("unable to read configuration file ", file)
 	}
 
-	// Unmarshal identity provider config
+	// Unmarshal identity provider config from file
 	var idpc IDPConfig
 	if err = json.Unmarshal(buffer, &idpc); err != nil {
 		log.Fatal("malformed config file ", file)
@@ -118,11 +118,17 @@ func AddIDPFromConfig(file string) {
 	// Create OpenID Connect/OAUTH 2.0 structures
         ctx := context.Background()
 
+	// Fetch details of OIDC provider
         provider, err := oidc.NewProvider(ctx, idpc.Endpoint)
         if err != nil {
                 log.Fatal("could not reach identity provider: ", idpc.Name)
         }
 
+	// Extract revocation endpoint from provider claims
+	var claims map[string]string
+	provider.Claims(&claims)
+	idpc.Revocation = claims["revocation_endpoint"]
+	
         oidcConfig := &oidc.Config{
                 ClientID:       idpc.ClientID,
                 SkipNonceCheck: true,

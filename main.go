@@ -44,6 +44,11 @@ import (
 )
 
 
+// Augmented handler function type
+type authenticatedHandler func (w http.ResponseWriter, r *http.Request, a *idp.Auth)
+
+
+
 // Upgrade structure for websocket connection
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
@@ -53,14 +58,15 @@ var upgrader = websocket.Upgrader{
 
 
 // Authentication middleware. If not authenticated, redirect to login.
-func authenticated(f http.HandlerFunc) http.HandlerFunc {
+func authenticated(f authenticatedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := getAuthCookie(r)
-		if (err != nil) || (cookie.IDToken == "") {
+		var a idp.Auth
+		err := getCookie(r, &a)
+		if (err != nil) || (a.IDToken == "") {
 			url := "/login?page=" + url.QueryEscape(r.URL.String())
 			http.Redirect(w, r, url, http.StatusFound)
 		} else {
-			f(w, r)
+			f(w, r, &a)
 		}
 	}
 }
@@ -91,15 +97,9 @@ func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
 
 
 // Handle logout request
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	cookie, err := getAuthCookie(r)
-	if err != nil {
-		http.Error(w, "Invalid session", http.StatusInternalServerError)
-		return
-	}
-
-	idp.Logout(cookie.ProviderIdx, cookie.AccessToken)
-	sessionLogout(w, r)
+func logoutHandler(w http.ResponseWriter, r *http.Request, a *idp.Auth) {
+	idp.Logout(a.ProviderIdx, a.AccessToken)
+	setCookie(w, r, a, logout)
 	
 	// Redirect to login
 	http.Redirect(w, r, "/login?page=/", http.StatusFound)
@@ -107,13 +107,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 
 // Render query page
-func queryPageHandler(w http.ResponseWriter, r *http.Request) {
-	cookie, err := getAuthCookie(r)
-	if err != nil {
-		http.Error(w, "Invalid session", http.StatusInternalServerError)
-		return
-	}
-
+func queryPageHandler(w http.ResponseWriter, r *http.Request, a *idp.Auth) {
 	t := template.Must(template.ParseFiles("static/template/query.html"))
 	url := "ws://" + host + ":" + strconv.Itoa(port) + "/ws"
 	s := struct {
@@ -121,22 +115,16 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 		URL     string
 		Timeout int
 		Count   int
-	}{cookie.Name, url, timeout, beacon.Count()}
+	}{a.Name, url, timeout, beacon.Count()}
 	t.Execute(w, s)
 }
 
 
 // Handle beacon query; return results asynchronously via websocket
-func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
+func queryAsyncHandler(w http.ResponseWriter, r *http.Request, a *idp.Auth) {
 	num := beacon.Count()
 	ch := make(chan beacon.BeaconResponse, num)
 
-	cookie, err := getAuthCookie(r)
-	if err != nil {
-		http.Error(w, "Invalid session", http.StatusInternalServerError)
-		return
-	}
-	
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
@@ -153,7 +141,7 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	beacon.QueryBeaconsAsync(query, cookie.AccessToken, cookie.IDToken, ch)
+	beacon.QueryBeaconsAsync(query, a.AccessToken, a.IDToken, ch)
 
 	// Collect responses, forwarding over websocket, or timeout
 	for i := 0; i < num; i++ {
@@ -177,7 +165,8 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	setAuthCookie(w, r, auth)
+	// Store session authentication information in cookie
+	setCookie(w, r, auth, auth.ExpiresIn)
 	
 	// Redirect to original page
 	http.Redirect(w, r, auth.URL, http.StatusFound)	
@@ -192,12 +181,12 @@ func main() {
 	
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
-	r.HandleFunc("/ws", queryAsyncHandler)
-	r.HandleFunc("/login/{provider}", loginRedirectHandler)
-	r.HandleFunc("/logout", logoutHandler)
 	r.HandleFunc("/login", loginPageHandler)
+	r.HandleFunc("/login/{provider}", loginRedirectHandler)
 	r.HandleFunc("/auth/bob/callback", callbackHandler)
-	r.HandleFunc("/", authenticated(queryPageHandler))
+	r.HandleFunc("/", authenticated(queryPageHandler))	
+	r.HandleFunc("/ws", authenticated(queryAsyncHandler))
+	r.HandleFunc("/logout", authenticated(logoutHandler))
 
 	http.ListenAndServe(fmt.Sprintf(":%d", port), r)
 }

@@ -18,11 +18,9 @@
 package main
 
 import (
-	"encoding/gob"
 	"net/http"	
 	"github.com/gorilla/sessions"
 	"github.com/mitchellh/mapstructure"
-	"github.com/knoxcarey/bob/idp"
 )
 
 
@@ -32,60 +30,38 @@ var cookieKey = "7fb62642f70d42e48b1e4b4a48ac94d6"
 // Cookie store
 var store = sessions.NewCookieStore([]byte(cookieKey))
 
-
-// Register cookie structure for easy (de)serialization
-func init() {
-	gob.Register(&idp.Auth{})
-}
+// Expiration to force session logout
+var logout = -1
 
 
 // Read and deserialize cookie
-func getAuthCookie(r *http.Request) (idp.Auth, error) {
+func getCookie(r *http.Request, value interface{}) error {
 	session, err := store.Get(r, "auth")
 	if err != nil {
-		return idp.Auth{}, err
+		return err
 	}
-	var a idp.Auth
-	if err := mapstructure.Decode(session.Values["auth"], &a); err != nil {
-		return idp.Auth{}, err
+	if err := mapstructure.Decode(session.Values["auth"], value); err != nil {
+		return err
 	} else {
-		return a, nil
-	}
+		return nil
+	}	
 }
 
 
-// Serialize and write cookie
-func setAuthCookie(w http.ResponseWriter, r *http.Request, a idp.Auth) error {
+// Serialize and Write cookie
+func setCookie(w http.ResponseWriter, r *http.Request, v interface{}, exp int) error {
 	session, err := store.Get(r, "auth")
 	if err != nil {
 		return err
 	}
 
-	session.Values["auth"] = a
+	session.Values["auth"] = v
 	session.Options = &sessions.Options{
 		Path: "/",
-		MaxAge: a.ExpiresIn,
+		MaxAge: exp,
 		HttpOnly: true,
 	}
 
 	session.Save(r, w)
-	return nil
-}
-
-
-// Log out of current IDP
-func sessionLogout(w http.ResponseWriter, r *http.Request) error {
-	session, err := store.Get(r, "auth")
-	if err != nil {
-		return err
-	}
-
-	session.Options = &sessions.Options{
-		Path: "/",
-		MaxAge: -1,
-		HttpOnly: true,
-	}
-
-	session.Save(r, w)
-	return nil
+	return nil	
 }

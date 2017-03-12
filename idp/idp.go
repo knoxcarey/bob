@@ -20,6 +20,7 @@ package idp
 import (
 	"io/ioutil"
 	"encoding/base64"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -82,6 +83,12 @@ var requests  map[string]authRequest                // Maps of requests by ephem
 // Initialize module globals
 func init() {
 	requests  = make(map[string]authRequest)
+}
+
+
+// Register Auth type so that it can be serialized (into cookie)
+func init() {
+	gob.Register(&Auth{})
 }
 
 

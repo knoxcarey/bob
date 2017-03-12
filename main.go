@@ -36,19 +36,13 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 	"github.com/knoxcarey/bob/idp"
 	"github.com/knoxcarey/bob/beacon"
 )
 
-
-// Key for cookie encryption
-var cookieKey = "7fb62642f70d42e48b1e4b4a48ac94d6"
-
-// Cookie store
-var store = sessions.NewCookieStore([]byte(cookieKey))
 
 // Upgrade structure for websocket connection
 var upgrader = websocket.Upgrader{
@@ -61,28 +55,14 @@ var upgrader = websocket.Upgrader{
 // Authentication middleware. If not authenticated, redirect to login.
 func authenticated(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		session, err := store.Get(r, "auth")
-		if (err != nil) || (session.Values["authenticated"] != true) {
+		cookie, err := getAuthCookie(r)
+		if (err != nil) || (cookie.IDToken == "") {
 			url := "/login?page=" + url.QueryEscape(r.URL.String())
 			http.Redirect(w, r, url, http.StatusFound)
 		} else {
 			f(w, r)
 		}
 	}
-}
-
-
-// Extract OAUTH/OIDC tokens from request
-func extractTokens(r *http.Request) (accessToken string, idToken string, name string, err error) {
-	session, err := store.Get(r, "auth")
-	if err != nil {
-		return
-	}
-
-	accessToken = session.Values["access_token"].(string)
-	idToken = session.Values["id_token"].(string)
-	name = session.Values["name"].(string)
-	return
 }
 
 
@@ -110,24 +90,16 @@ func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// Logout
+// Handle logout request
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "auth")
+	cookie, err := getAuthCookie(r)
 	if err != nil {
 		http.Error(w, "Invalid session", http.StatusInternalServerError)
 		return
 	}
 
-	pi := session.Values["provider_idx"].(int)
-	accessToken := session.Values["access_token"].(string)
-	
-	idp.Logout(pi, accessToken)
-	session.Options = &sessions.Options{
-		Path: "/",
-		MaxAge: -1,
-		HttpOnly: true,
-	}
-	session.Save(r, w)
+	idp.Logout(cookie.ProviderIdx, cookie.AccessToken)
+	sessionLogout(w, r)
 	
 	// Redirect to login
 	http.Redirect(w, r, "/login?page=/", http.StatusFound)
@@ -136,8 +108,9 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 // Render query page
 func queryPageHandler(w http.ResponseWriter, r *http.Request) {
-	_, _, name, err := extractTokens(r)
+	cookie, err := getAuthCookie(r)
 	if err != nil {
+		http.Error(w, "Invalid session", http.StatusInternalServerError)
 		return
 	}
 
@@ -148,7 +121,7 @@ func queryPageHandler(w http.ResponseWriter, r *http.Request) {
 		URL     string
 		Timeout int
 		Count   int
-	}{name, url, timeout, beacon.Count()}
+	}{cookie.Name, url, timeout, beacon.Count()}
 	t.Execute(w, s)
 }
 
@@ -158,11 +131,12 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 	num := beacon.Count()
 	ch := make(chan beacon.BeaconResponse, num)
 
-	accessToken, idToken, _, err := extractTokens(r)
+	cookie, err := getAuthCookie(r)
 	if err != nil {
+		http.Error(w, "Invalid session", http.StatusInternalServerError)
 		return
 	}
-
+	
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
@@ -179,7 +153,7 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	beacon.QueryBeaconsAsync(query, accessToken, idToken, ch)
+	beacon.QueryBeaconsAsync(query, cookie.AccessToken, cookie.IDToken, ch)
 
 	// Collect responses, forwarding over websocket, or timeout
 	for i := 0; i < num; i++ {
@@ -203,23 +177,8 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	// Set cookie data
-	session, err := store.Get(r, "auth")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	session.Values["authenticated"] = true
-	session.Values["access_token"] = auth.AccessToken
-	session.Values["id_token"] = auth.IDToken
-	session.Values["name"] = auth.Name
-	session.Values["provider_idx"] = auth.ProviderIdx
-	session.Options = &sessions.Options{
-		Path: "/",
-		MaxAge: auth.ExpiresIn,
-		HttpOnly: true,
-	}
-	session.Save(r, w)
-		
+	setAuthCookie(w, r, auth)
+	
 	// Redirect to original page
 	http.Redirect(w, r, auth.URL, http.StatusFound)	
 }

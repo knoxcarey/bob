@@ -65,13 +65,13 @@ type authRequest struct {
 }
 
 // Structure to contain response data from identity provider
-type AuthResponse struct {
+type Auth struct {
 	URL         string                          // URL originally requested
 	AccessToken string                          // Access token for session
 	IDToken     string                          // Identity token
 	ExpiresIn   int                             // Timeout for session
 	Name        string                          // Authenticated user's name
-	ProviderIdx int                             // Index of provider to which authenticated
+	ProviderIdx int                             // Index of provider that authenticated
 }
 
 
@@ -192,7 +192,7 @@ func Logout(pi int, accessToken string) {
 
 
 // Handle callback from IdP
-func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
+func Callback(w http.ResponseWriter, r *http.Request) (Auth, error) {
 	// Extract state from IDP response
 	state := r.URL.Query().Get("state")
 
@@ -207,35 +207,34 @@ func Callback(w http.ResponseWriter, r *http.Request) (AuthResponse, error) {
 	oauth2Token, err := idp.config.Exchange(*idp.context, r.URL.Query().Get("code"))
 	if err != nil {
 		http.Error(w, "Failed to exchange token: "+err.Error(), http.StatusInternalServerError)
-		return AuthResponse{}, err
+		return Auth{}, err
 	}
 
 	// Get raw version of ID token
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
 		http.Error(w, "No id_token field in oauth2 token.", http.StatusInternalServerError)
-		return AuthResponse{}, err
+		return Auth{}, err
 	}
 
 	// Verify it
 	if _, err := idp.verifier.Verify(*idp.context, rawIDToken); err != nil {
 		http.Error(w, "Failed to verify ID Token: "+err.Error(), http.StatusInternalServerError)
-		return AuthResponse{}, err
+		return Auth{}, err
 	}
 
 	// Fetch userinfo
 	userInfo, err := idp.provider.UserInfo(*idp.context, oauth2.StaticTokenSource(oauth2Token))
 	if err != nil {
 		http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
-		return AuthResponse{}, err
+		return Auth{}, err
 	}
 
 	var claims map[string]interface{}
 	userInfo.Claims(&claims)
 	name := claims["given_name"].(string) + " " + claims["family_name"].(string)
 	
-	// FIXME: want to return identifier for which provider auth'd us in some form. Index?
-	resp := AuthResponse{
+	resp := Auth{
 		URL: requests[state].url,
 		AccessToken: oauth2Token.Extra("access_token").(string),
 		IDToken: rawIDToken,

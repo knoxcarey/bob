@@ -74,19 +74,19 @@ above, the access and ID tokens are also sent along. This is done by
 adding HTTP headers for the tokens. The access token is sent in the
 `Authorization` header:
 
-```
-Authorization: Bearer <access_token>
-```
+  ```
+  Authorization: Bearer <access_token>
+  ```
 
-and the ID token is sent in a non-standard header:
+  and the ID token is sent in a non-standard header:
 
-```
-IDToken: <id_token>
-```
+  ```
+  IDToken: <id_token>
+  ```
 
-The queries to the individual beacons are performed in parallel. As
-the results come back for each beacon, they are sent over to the
-browser using a websocket...
+  The queries to the individual beacons are performed in parallel. As
+  the results come back for each beacon, they are sent over to the
+  browser using a websocket...
 
 6. `/ws` the websocket endpoint used to actually post the query. The
 websocket conenction is started when the main query page is loaded,

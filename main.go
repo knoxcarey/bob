@@ -14,19 +14,7 @@
  limitations under the License.
  ***************************************************************************/
 
-
 package main
-
-/* TODO:
-   * Extract common code from beacon versions
-   * Automated tests
-   * Documentation
-   * Dockerfile
-   * Icons, other metadata for beacons and IDPs
-   * Integrate OpenID connect 
-     * Display interfaces for logging in with various IDPs
-     * Send auth headers to beacons along with queries
-*/
 
 import (
 	"encoding/json"
@@ -36,7 +24,6 @@ import (
 	"net/url"
 	"strconv"
 	"time"
-
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/knoxcarey/bob/idp"
@@ -44,16 +31,55 @@ import (
 )
 
 
-// Augmented handler function type
+// A net/http handler function that also takes an authentication session argument
 type authenticatedHandler func (w http.ResponseWriter, r *http.Request, a *idp.Auth)
-
-
 
 // Upgrade structure for websocket connection
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+}
+
+
+// Lets the user choose from among the registered ID providers
+func loginPageHandler(w http.ResponseWriter, r *http.Request) {
+	t := template.Must(template.ParseFiles("static/template/login.html"))
+	s := struct {
+		Providers []idp.Provider
+		Page      string
+	}{idp.Providers(), r.URL.Query().Get("page")}
+	t.Execute(w, s)
+}
+
+
+// Redirects to a chosen identity provider
+func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	provider, err := strconv.Atoi(vars["provider"])
+	if err != nil {
+		http.Error(w, "Invalid identity provider", http.StatusInternalServerError)
+		return
+	} else {
+		idp.Authenticate(provider, w, r)
+	}
+}
+
+
+// Handles OpenID Connect identity provider callbacks
+func callbackHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Process identity provider callback, checking tokens, etc.
+	auth, err := idp.Callback(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	// Store session authentication information in cookie
+	setCookie(w, r, auth, auth.ExpiresIn)
+	
+	// Redirect to original page
+	http.Redirect(w, r, auth.URL, http.StatusFound)	
 }
 
 
@@ -72,41 +98,7 @@ func authenticated(f authenticatedHandler) http.HandlerFunc {
 }
 
 
-// Render login page
-func loginPageHandler(w http.ResponseWriter, r *http.Request) {
-	t := template.Must(template.ParseFiles("static/template/login.html"))
-	s := struct {
-		Providers []idp.Provider
-		Page      string
-	}{idp.Providers(), r.URL.Query().Get("page")}
-	t.Execute(w, s)
-}
-
-
-// Redirect to identity provider
-func loginRedirectHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	provider, err := strconv.Atoi(vars["provider"])
-	if err != nil {
-		http.Error(w, "Invalid identity provider", http.StatusInternalServerError)
-		return
-	} else {
-		idp.Authenticate(provider, w, r)
-	}
-}
-
-
-// Handle logout request
-func logoutHandler(w http.ResponseWriter, r *http.Request, a *idp.Auth) {
-	idp.Logout(a.ProviderIdx, a.AccessToken)
-	setCookie(w, r, a, logout)
-	
-	// Redirect to login
-	http.Redirect(w, r, "/login?page=/", http.StatusFound)
-}
-
-
-// Render query page
+// Render the main query page
 func queryPageHandler(w http.ResponseWriter, r *http.Request, a *idp.Auth) {
 	t := template.Must(template.ParseFiles("static/template/query.html"))
 	url := "ws://" + host + ":" + strconv.Itoa(port) + "/ws"
@@ -156,20 +148,13 @@ func queryAsyncHandler(w http.ResponseWriter, r *http.Request, a *idp.Auth) {
 }
 
 
-// Handle OpenID Connect identity provider callbacks
-func callbackHandler(w http.ResponseWriter, r *http.Request) {
-
-	// Process identity provider callback, checking tokens, etc.
-	auth, err := idp.Callback(w, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	// Store session authentication information in cookie
-	setCookie(w, r, auth, auth.ExpiresIn)
+// Handle logout request
+func logoutHandler(w http.ResponseWriter, r *http.Request, a *idp.Auth) {
+	idp.Logout(a.ProviderIdx, a.AccessToken)
+	setCookie(w, r, a, logout)
 	
-	// Redirect to original page
-	http.Redirect(w, r, auth.URL, http.StatusFound)	
+	// Redirect to login
+	http.Redirect(w, r, "/login?page=/", http.StatusFound)
 }
 
 
@@ -183,7 +168,7 @@ func main() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 	r.HandleFunc("/login", loginPageHandler)
 	r.HandleFunc("/login/{provider}", loginRedirectHandler)
-	r.HandleFunc("/auth/bob/callback", callbackHandler)
+	r.HandleFunc("/callback", callbackHandler)
 	r.HandleFunc("/", authenticated(queryPageHandler))	
 	r.HandleFunc("/ws", authenticated(queryAsyncHandler))
 	r.HandleFunc("/logout", authenticated(logoutHandler))

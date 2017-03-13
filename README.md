@@ -121,7 +121,7 @@ configured: the set of identity provider and the set of beacons.
 ### Identity Provider Configuration
 
 To configure the set of identity providers, place one configuration
-file for each provider in the `/config/idp` directory. Keep in mind
+file for each provider in the `config/idp` directory. Keep in mind
 that the default location of the config directory may be different
 based on the -config command line switch.
 
@@ -156,6 +156,112 @@ secret established with the identity provider. Alternatively, specify
 authentication to the identity provider.
 
 
+### Beacon configuration
+
+Beacons are configured similarly -- by placing a config file for each
+beacon in the `config/beacon` directory.
+
+There is significant variability in the format of these files, as
+there are different defaults for different versions of the beacon. For
+example, here is a configuration file for the ICGC beacon, which is a
+very standard version 0.2 beacon:
+
+```
+{
+    "name": "ICGC",
+    "version": "0.2",
+    "endpoint": "https://dcc.icgc.org/api/v1/beacon/query"
+}
+```
+
+The `name` field is a friendly name, which will be displayed in the
+web service. The `version` indicates the beacon version, and this
+version string is used to select how the data structure is to be
+interpreted. At present, the only supported versions are `0.2` and
+`0.3`. In contrast, the COSMIC beacon is quite non-standard:
+
+```
+{
+    "name": "Cosmic",
+    "version": "0.2",
+    "endpoint": "http://cancer.sanger.ac.uk/api/ga4gh/beacon",
+    "icon": "sanger.png",
+    "datasetIds": ["cosmic"],
+    "queryMap":{
+	"chromosome": "chrom",
+	"start": "pos",
+	"assemblyId": "ref",
+	"GRCh37": "37",
+	"GRCh38": "38"
+    },
+    "additionalFields": {
+	"format": "json"
+    }
+}
+```
+
+There are a few things to note about this configuration relative the
+previous one. First, there is an `icon` field, which provides the
+filename for an icon image. See the section on "Images" below.
+Secondly, the field `datasetIds` contains an array of datasets to be
+queried. This is necessary because some beacons allow querying multiple
+data sets. If `datasetIds` is not specified, you will get the default
+dataset supported by the beacon.
+
+Next, the `queryMap` object describes how the canonical fields names
+should be mapped for this beacon. Each version of the beacon has its
+own default map. For version 0.2, the default mapping is:
+
+```
+{
+  "chromosome": "chromosome",
+  "start": "position",
+  "alternateBases": "allele",
+  "referenceBases": "referenceBases",
+  "datasetIds": "dataset",
+  "assemblyId": "reference",
+  "GRCh37": "GRCh37",
+  "GRCh38": "GRCh38",
+}
+```
+
+For version 0.3 beacons, the mapping is:
+
+```
+{
+  "chromosome": "chromosome",
+  "start": "start",
+  "alternateBases": "alternateBases",
+  "referenceBases": "referenceBases",
+  "datasetIds": "datasetIds",
+  "assemblyId": "assemblyId",
+  "GRCh37": "GRCh37",
+  "GRCh38": "GRCh38",
+}
+```
+
+Note that the keys in both versions are the same -- those keys are the
+standard names for these fields. When you construct a configuration
+file for a given beacon, you only need to specify fields in the
+`queryMap` if they are non-standard. Thus the configuration for the
+ICGC beacon shown above has no `queryMap` at all.
+
+Finally, the COSMIC beacon has an `additionalFields` object that
+contains arbitrary additional information that will be added as
+key/value pairs in the query string for that beacon.
+
+The BoB server is structured so that it is easy to add new beacon
+versions as they become available, or even to support very
+non-standard APIs, should that be necessary.
+
+### Images
+
+All images are stored in a single directory, at `static/img`. If no
+images are specified, the interface will present the a deafult image
+instead.
+
+
+
 
 ## To do
 * Extract common code from beacon versions
@@ -163,5 +269,6 @@ authentication to the identity provider.
 * Cleanup and documentation
 * Dockerfile
 * Icons, other metadata for IDPs
+* Test Google/other IDP
 * Improve UI for login
 * Redirect URL -- is it even used? Does the service just use it's own?

@@ -147,7 +147,7 @@ func AddIDPFromConfig(file string) {
                 ClientID:     idpc.ClientID,
                 ClientSecret: idpc.ClientSecret,
                 Endpoint:     provider.Endpoint(),
-                RedirectURL:  "http://127.0.0.1:8080/auth/bob/callback", // FIXME!
+                RedirectURL:  idpc.RedirectURL,
                 Scopes:       []string{oidc.ScopeOpenID, "profile", "email", "ga4gh"},
         }
 

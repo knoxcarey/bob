@@ -72,7 +72,7 @@ function displayResult(r) {
     var json = JSON.parse(r);
     var result = document.createElement('div');
     result.className += 'beacon clearfix';
-    result.innerHTML = '<div class="image"><img class="icon" src="/static/img/' + (json.icon || "default.png") + '"/></div>';
+    result.innerHTML = '<div class="image"><img class="icon" src="/static/img/' + (json.icon || "__default.png") + '"/></div>';
     result.innerHTML += '<div class="beaconname">' + json.name + '</div>';
 
     for (var dataset in json.responses) {

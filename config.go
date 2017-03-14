@@ -23,7 +23,10 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
-
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
 	"github.com/knoxcarey/bob/idp"
 	"github.com/knoxcarey/bob/beacon"
 )
@@ -36,12 +39,58 @@ var (
 	host string                       // Host for this service
 )
 
-const (
-	defaultConfigDir  = "./config"    // Default location of config file
+var (
+	defaultConfigDir  = ""            // Default location of config file
 	defaultPort       = 8080          // Default port for server
 	defaultTimeout    = 20            // Default timeout for queries, in seconds
 	defaultHost       = "127.0.0.1"   // Default host is localhost
 )
+
+
+// Read in configuration and apply defaults
+func init() {	
+
+	// Initialize default config directory
+	_, dir, _, _ := runtime.Caller(0)
+	defaultConfigDir = filepath.Join(path.Dir(dir), "config")
+
+	// Read command line
+	parseSwitches()
+
+	// Create symbolic links for images
+	linkAssets()
+
+	// read in configuration files
+	readConfigs("beacon", func (file string) {beacon.AddBeaconFromConfig(file)})
+	readConfigs("idp", func (file string) {idp.AddIDPFromConfig(file)})
+}
+
+
+// Parse command-line switches; set defaults if not present
+func parseSwitches() {
+	flag.StringVar(&configDir, "config", defaultConfigDir, "Configuration directory")
+	flag.StringVar(&host, "host", defaultHost, "Host name")
+	flag.IntVar(&port, "port", defaultPort, "Port on which to run server")
+	flag.IntVar(&timeout, "timeout", defaultTimeout, "Timeout for beacon queries, in seconds")
+	flag.Parse()
+}
+
+
+// Make symbolic links to image assets
+func linkAssets() {
+	srcDir := configDir + "/img/"
+	dstDir := "static/img/"
+	files, err := ioutil.ReadDir(srcDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	for _, file := range files {
+		if _, err := os.Stat(dstDir + file.Name()); os.IsNotExist(err) {
+			os.Symlink(srcDir + file.Name(), dstDir + file.Name())
+		}
+	}
+}
 
 
 // Read configuration files from a subdirectory and perform action on each
@@ -57,20 +106,3 @@ func readConfigs(subdir string, action func (file string)) {
 	}
 }
 
-
-// Parse command-line switches; set defaults if not present
-func parseSwitches() {
-	flag.StringVar(&configDir, "config", defaultConfigDir, "Configuration directory")
-	flag.StringVar(&host, "host", defaultHost, "Host name")
-	flag.IntVar(&port, "port", defaultPort, "Port on which to run server")
-	flag.IntVar(&timeout, "timeout", defaultTimeout, "Timeout for beacon queries, in seconds")
-	flag.Parse()
-}
-
-
-// Read in configuration and apply defaults
-func init() {	
-	parseSwitches()
-	readConfigs("beacon", func (file string) {beacon.AddBeaconFromConfig(file)})
-	readConfigs("idp", func (file string) {idp.AddIDPFromConfig(file)})
-}

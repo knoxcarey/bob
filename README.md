@@ -280,7 +280,7 @@ The project is laid out as shown below.
 │   ├── idp                     | Identity providers
 │   │   └── genecloud.json      | Genecloud IDP
 │   └── img                     | Images
-│       └── genecloud.json      | Icon for Sanger COSMIC beacon
+│       └── sanger.png          | Icon for COSMIC; link into static/img/ @ launch
 ├── config.go                   | Config module -- reads configuration files
 ├── idp                         | IDP module
 │   └── idp.go                  | IDP implementation; interacts with OIDC providers
@@ -308,4 +308,4 @@ The project is laid out as shown below.
 * Icons, other metadata for IDPs
 * Test Google/other IDP
 * Improve UI for login
-* Redirect URL -- is it even used? Does the service just use it's own?
+

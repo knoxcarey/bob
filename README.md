@@ -188,14 +188,14 @@ interpreted. At present, the only supported versions are `0.2` and
     "icon": "sanger.png",
     "datasetIds": ["cosmic"],
     "queryMap":{
-	"chromosome": "chrom",
-	"start": "pos",
-	"assemblyId": "ref",
-	"GRCh37": "37",
-	"GRCh38": "38"
+        "chromosome": "chrom",
+        "start": "pos",
+        "assemblyId": "ref",
+        "GRCh37": "37",
+        "GRCh38": "38"
     },
     "additionalFields": {
-	"format": "json"
+        "format": "json"
     }
 }
 ```
@@ -260,6 +260,43 @@ All images are stored in a single directory, at `static/img`. If no
 images are specified, the interface will present the a deafult image
 instead.
 
+
+## Project Organization
+
+The project is laid out as shown below.
+
+```
+.
+├── LICENSE                     | License terms for the project
+├── README.md                   | This file
+├── beacon                      | Directory containing the beacon module
+│   ├── beacon.go               | Common functions for all beacon implementations
+│   ├── beaconV2.go             | Beacon version 0.2 implementation
+│   └── beaconV3.go             | Beacon version 0.3 implementation
+├── config                      | Default configuration directory
+│   ├── beacon                  | Beacon configuration
+│   │   ├── cosmic.json         | Specification for the COSMIC beacon
+│   │   └── icgc.json           | Specification for the ICGC beacon
+│   ├── idp                     | Identity providers
+│   │   └── genecloud.json      | Genecloud IDP
+│   └── img                     | Images
+│       └── genecloud.json      | Icon for Sanger COSMIC beacon
+├── config.go                   | Config module -- reads configuration files
+├── idp                         | IDP module
+│   └── idp.go                  | IDP implementation; interacts with OIDC providers
+├── main.go                     | Entry point and web services endpoints
+├── session.go                  | Session management functions
+└── static                      | Static files
+    ├── css                     |
+    │   └── query.css           | Style sheet
+    ├── img                     |
+    │   └── default.png         | Default icon
+    ├── js                      |
+    │   └── query.js            | Javascript functions
+    └── template                |
+        ├── login.html          | Login page
+        └── query.html          | Main query page
+```     
 
 
 

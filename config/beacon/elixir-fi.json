@@ -1,0 +1,13 @@
+{
+    "name": "Elixir Finland",
+    "version": "0.3",
+    "endpoint": "http://elixir-beacon.csc.fi/beacon/query",
+    "icon": "elixir.png",
+    "datasetIds": ["1000Genomes-FIN"],
+    "queryMap":{
+	"chromosome": "referencename",
+	"assemblyId": "assemblyid",
+	"alternateBases": "alternatebases",
+	"datasetIds": "datasetids"
+    }
+}

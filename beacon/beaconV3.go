@@ -66,17 +66,34 @@ func (beacon *beaconV3) parseResponse(status int, raw []byte, err error) *Beacon
 		return response
 	}
 
-	var v3 struct {
-		DatasetIds              []string
-		DatasetAlleleResponses  []map[string]string
-		Error                   map[string]string
-		Exists                  string}
+	// var v3 struct {
+	// 	DatasetIds              []string
+	// 	DatasetAlleleResponses  []map[string]string
+	// 	Error                   map[string]string
+	// 	Exists                  string}
 
+	var v3 struct {
+		BeaconId                string                    `json:"beaconId"`
+		Exists                  bool                      `json:"exists"`
+		Error                   map[string]string         `json:"error,omitempty"`
+		AlleleRequest           map [string]interface{}   `json:"alleleRequest,omitempty"`
+		DatasetAlleleResponses  []map[string]interface{}  `json:"datasetAlleleResponses,omitempty"`
+	}
+
+	
 	if err := json.Unmarshal(raw, &v3); err == nil {
 		if v3.Error == nil {
 			response.Status = status
 			for _, r := range v3.DatasetAlleleResponses {
-				addResponseResult(response, r["id"], r["exists"])
+				var ex string
+				if r["exists"].(bool) {
+					ex = "true"
+				} else {
+					ex = "false"
+				}
+				
+				id := r["datasetId"].(string)
+				addResponseResult(response, id, ex)
 			}
 		} else {
 			code, _ := strconv.Atoi(v3.Error["errorCode"])
@@ -104,8 +121,8 @@ func (beacon *beaconV3) query(query *BeaconQuery, accessToken string, idToken st
 // Construct the query string
 func (beacon *beaconV3) queryString(query *BeaconQuery) string {
 	ql := make([]string, 0, 20)
-	
-	for _, d := range beacon.Datasets {
+
+	for _, d := range beacon.DatasetIds {
 		ql = append(ql, fmt.Sprintf("%s=%s", beacon.QueryMap["datasetIds"], d))
 	}
 		

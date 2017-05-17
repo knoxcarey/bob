@@ -97,7 +97,7 @@ func (beacon *beaconV2) queryString(query *BeaconQuery) string {
 	ql := make([]string, 0, 20)
 	
 	// Add datasets
-	for _, d := range beacon.Datasets {
+	for _, d := range beacon.DatasetIds {
 		ql = append(ql, fmt.Sprintf("%s=%s", beacon.QueryMap["datasetIds"], d))
 	}
 

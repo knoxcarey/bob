@@ -308,4 +308,8 @@ The project is laid out as shown below.
 * Icons, other metadata for IDPs
 * Test Google/other IDP
 * Improve UI for login
+* Prevent submission of null queries
+* Only read configs ending in ".json"
+* Add logout
+* Stop spinner when all results have been returned
 

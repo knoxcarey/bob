@@ -136,10 +136,7 @@ func AddIDPFromConfig(file string) {
 	provider.Claims(&claims)
 	idpc.Revocation = claims["revocation_endpoint"]
 	
-        oidcConfig := &oidc.Config{
-                ClientID:       idpc.ClientID,
-                SkipNonceCheck: true,
-        }
+        oidcConfig := &oidc.Config{ClientID: idpc.ClientID}
 
         verifier := provider.Verifier(oidcConfig)
 

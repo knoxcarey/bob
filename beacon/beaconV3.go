@@ -66,12 +66,6 @@ func (beacon *beaconV3) parseResponse(status int, raw []byte, err error) *Beacon
 		return response
 	}
 
-	// var v3 struct {
-	// 	DatasetIds              []string
-	// 	DatasetAlleleResponses  []map[string]string
-	// 	Error                   map[string]string
-	// 	Exists                  string}
-
 	var v3 struct {
 		BeaconId                string                    `json:"beaconId"`
 		Exists                  bool                      `json:"exists"`

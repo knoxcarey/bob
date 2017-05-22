@@ -162,6 +162,7 @@ func AddIDPFromConfig(file string) {
 }
 
 
+// Handle redirect to IdP indexed by pi
 func Authenticate(pi int, w http.ResponseWriter, r *http.Request) {
 	state := nonce(32)
 	idp := &providers[pi]

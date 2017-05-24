@@ -74,7 +74,6 @@ func (beacon *beaconV3) parseResponse(status int, raw []byte, err error) *Beacon
 		DatasetAlleleResponses  []map[string]interface{}  `json:"datasetAlleleResponses,omitempty"`
 	}
 
-	
 	if err := json.Unmarshal(raw, &v3); err == nil {
 		if v3.Error == nil {
 			response.Status = status
